@@ -1,6 +1,10 @@
 import '../css/style.css'
 import { Actor, Engine, Vector, DisplayMode } from "excalibur"
 import { Resources, ResourceLoader } from './resources.js'
+import { Player } from './player.js'
+import { Zombie } from './zombie.js'
+import { SlowZombie } from './slowzombie.js'
+import { FastZombie } from './fastzombie.js'
 
 export class Game extends Engine {
 
@@ -16,17 +20,14 @@ export class Game extends Engine {
 
     startGame() {
         console.log("start de game!")
-        const fish = new Actor()
-        fish.graphics.use(Resources.Fish.toSprite())
-        fish.pos = new Vector(500, 300)
-        fish.vel = new Vector(-10,0)
-        fish.events.on("exitviewport", (e) => this.fishLeft(e))
-        this.add(fish)
+        const player = new Player()
+        this.add(player)
+        const slowZombie = new SlowZombie()
+        this.add(slowZombie)
+        const fastZombie = new FastZombie()
+        this.add(fastZombie)
     }
 
-    fishLeft(e) {
-        e.target.pos = new Vector(1350, 300)
-    }
 }
 
 new Game()
