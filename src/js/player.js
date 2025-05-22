@@ -13,14 +13,15 @@ export class Player extends Actor {
     isRotatingRight = false;
     bulletsFired = 0; // aantal kogels sinds laatste reload
     reloading = false; // reload status
-    reloadTime = 1000; // reload tijd in ms
-    maxBullets = 7; // max aantal kogels voor reload
+    reloadTime = 2500; // reload tijd in ms
+    maxBullets = 35; // max aantal kogels voor reload
     isTurning = false;
     targetRotation = null;
     turnSpeed = 4; // radians per second (adjust for faster/slower turn)
     turnRightOnSpace = true; // default to right
     spaceTurnCooldown = 0; // ms
-    spaceTurnCooldownTime = 3000; // 3 second cooldown in ms
+    spaceTurnCooldownTime = 1000; // 3 second cooldown in ms
+    isSprinting = false;
 
     constructor() {
         super({ width: 50, height: 50 })
@@ -70,20 +71,27 @@ export class Player extends Actor {
         // Tijdens reload kan niet geschoten worden, maar bewegen moet wel kunnen
         let speed = 0;
         let strafe = 0;
+        const baseSpeed = (this.moveSpeed ?? 150);
+
+        this.isSprinting = engine.input.keyboard.isHeld(Keys.ShiftLeft) || engine.input.keyboard.isHeld(Keys.ShiftRight);
+
+        if (this.isSprinting) {
+            console.log("Shift held: Sprinting active, shooting disabled.");
+        }
         
         // Disable WASD movement during turn animation
         if (!this.isTurning) {
             if (engine.input.keyboard.isHeld(Keys.W)) {
-                speed = (this.moveSpeed ?? 150);
+                speed = this.isSprinting ? baseSpeed * 2.5 : baseSpeed;
             }
             if (engine.input.keyboard.isHeld(Keys.S)) {
-                speed = -(this.moveSpeed ?? 150);
+                speed = -baseSpeed; // Sprinting does not affect backward movement
             }
             if (engine.input.keyboard.isHeld(Keys.D)) {
-                strafe = (this.moveSpeed ?? 150);
+                strafe = baseSpeed; // Sprinting does not affect strafing
             }
             if (engine.input.keyboard.isHeld(Keys.A)) {
-                strafe = -(this.moveSpeed ?? 150);
+                strafe = -baseSpeed; // Sprinting does not affect strafing
             }
         }
         if (engine.input.keyboard.isHeld(Keys.Right)) {
@@ -93,6 +101,7 @@ export class Player extends Actor {
             this.rotation -= 0.025; 
         }
         if (engine.input.keyboard.isHeld(Keys.ShiftLeft) || engine.input.keyboard.isHeld(Keys.ShiftRight)) { // Added back shift check
+            // This console log is now handled by the isSprinting logic
         }
         if (this.spaceTurnCooldown > 0) {
             this.spaceTurnCooldown -= delta;
@@ -142,7 +151,8 @@ export class Player extends Actor {
         }
 
         // Tijdens reload kan niet geschoten worden, maar bewegen mag wel
-        if (!this.reloading && this.fireCooldown <= 0) {
+        // Ook niet schieten tijdens sprinten of 180 graden draai
+        if (!this.reloading && !this.isSprinting && !this.isTurning && this.fireCooldown <= 0) {
             this.shoot();
             this.bulletsFired++;
             this.fireCooldown = 300; // 0.3 seconde in ms
