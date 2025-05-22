@@ -10,10 +10,12 @@ export class Player extends Actor {
     game
     fireCooldown = 0; // tijd tot volgende schot in ms
     _wantsToShoot = false; // interne flag voor click-spam blokkade
+    autoFireEnabled = false; // toggle for auto-fire
 
     constructor() {
         super({ width: 50, height: 50 })
         this.graphics.use(Resources.Player.toSprite())
+        this.graphics.flipHorizontal = true; // Flip the sprite horizontally again
         this.pos = new Vector(100, 100)
         this.vel = new Vector(0, 0)
     }
@@ -31,25 +33,28 @@ export class Player extends Actor {
         // Voeg event listener toe voor spatiebalk (schieten)
         engine.input.keyboard.on('press', (evt) => {
             if (evt.key === Keys.Space) {
-                this.shoot();
+                // Alleen _wantsToShoot op true zetten als auto-fire UIT staat
+                if (!this.autoFireEnabled) {
+                    this._wantsToShoot = true;
+                }
             }
         });
-        // Voeg event listener toe voor pijl-omlaag toets (schieten)
-        engine.input.keyboard.on('press', (evt) => {
-            if (evt.key === Keys.Down) {
-                this.shoot();
-            }
-        });
-        // Spacebar of pijltje-omlaag indrukken: wil schieten
-        engine.input.keyboard.on('press', (evt) => {
-            if (evt.key === Keys.Space || evt.key === Keys.Down) {
-                this._wantsToShoot = true;
-            }
-        });
-        // Spacebar of pijltje-omlaag loslaten: wil niet meer schieten
+        // Spacebar loslaten: wil niet meer schieten
         engine.input.keyboard.on('release', (evt) => {
-            if (evt.key === Keys.Space || evt.key === Keys.Down) {
+            if (evt.key === Keys.Space) {
+                // _wantsToShoot wordt altijd false bij loslaten, relevant voor single press in manual mode.
                 this._wantsToShoot = false;
+            }
+        });
+
+        // Event listener for Shift key to toggle auto-fire
+        engine.input.keyboard.on('press', (evt) => {
+            if (evt.key === Keys.ShiftLeft || evt.key === Keys.ShiftRight) { // Using ShiftLeft, can add ShiftRight if needed
+                this.autoFireEnabled = !this.autoFireEnabled;
+                if (this.autoFireEnabled) {
+                    // Als auto-fire AAN gaat, reset _wantsToShoot om conflicten te voorkomen.
+                    this._wantsToShoot = false;
+                }
             }
         });
         // ...eventuele andere initialisatie code...
@@ -71,20 +76,29 @@ export class Player extends Actor {
             strafe = -(this.moveSpeed ?? 150);
         }
         if (engine.input.keyboard.isHeld(Keys.Right)) {
-            this.rotation += 0.05;
+            this.rotation += 0.02; 
         }
-        if (engine.input.keyboard.isHeld(Keys.Left)) {
-            this.rotation -= 0.05;
+        if (engine.input.keyboard.isHeld(Keys.Left) ) {
+            this.rotation -= 0.02; 
         }
         // FIRE RATE LOGICA
         if (this.fireCooldown > 0) {
             this.fireCooldown -= delta;
         }
-        // Alleen schieten als fireCooldown <= 0
-        if (
-            (engine.input.keyboard.isHeld(Keys.Space) || engine.input.keyboard.isHeld(Keys.Down) || this._wantsToShoot)
-            && this.fireCooldown <= 0
+
+        // Determine if a shot should be attempted this frame
+        let shouldAttemptShot = false;
+        if (this.autoFireEnabled) {
+            shouldAttemptShot = true;
+        } else if (
+            engine.input.keyboard.isHeld(Keys.Space) ||
+            this._wantsToShoot
         ) {
+            shouldAttemptShot = true;
+        }
+        
+        // Alleen schieten als fireCooldown <= 0 en een schot poging is
+        if (shouldAttemptShot && this.fireCooldown <= 0) {
             this.shoot();
             this.fireCooldown = 300; // 0.3 seconde in ms
             this._wantsToShoot = false; // reset zodat je niet kan spammen met press
@@ -96,7 +110,7 @@ export class Player extends Actor {
     }
 
     shoot() {
-        if (this.fireCooldown > 0) return; // Extra beveiliging tegen spam
+        if (this.fireCooldown > 0 && !this.autoFireEnabled && !this._wantsToShoot && !this.scene.engine.input.keyboard.isHeld(Keys.Space) && !this.scene.engine.input.keyboard.isHeld(Keys.Down) ) return; // Prevent spam if not auto firing or holding key
         // Bepaal direction op basis van huidige rotatie
         const direction = Vector.fromAngle(this.rotation);
         // Startpositie iets voor de speler
