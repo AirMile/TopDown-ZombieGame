@@ -1,4 +1,4 @@
-import { Actor, Vector, Engine, Keys } from "excalibur"
+import { Actor, Vector, Engine, Keys, PointerButton } from "excalibur"
 import { Resources } from "./resources.js"
 import { Bullet } from "./bullet.js"
 
@@ -9,8 +9,10 @@ export class Player extends Actor {
     shootDirection
     game
     fireCooldown = 0; // tijd tot volgende schot in ms
-    _wantsToShoot = false; // interne flag voor click-spam blokkade
+    wantsToShoot = false; // interne flag voor click-spam blokkade
     autoFireEnabled = false; // toggle for auto-fire
+    isRotatingLeft = false;
+    isRotatingRight = false;
 
     constructor() {
         super({ width: 50, height: 50 })
@@ -23,27 +25,40 @@ export class Player extends Actor {
     onInitialize(engine) {
         // Voeg event listener toe voor muisknoppen (alleen rotatie)
         engine.input.pointers.on('down', (evt) => {
-            if (evt.button === 0) { // Linker muisknop
-                this.rotation -= 0.05;
+            if (evt.button === PointerButton.Left) { // Linker muisknop
+                this.isRotatingLeft = true;
+                console.log("Player: Started rotating left (pointer down).");
             }
-            if (evt.button === 2) { // Rechter muisknop
-                this.rotation += 0.05;
+            if (evt.button === PointerButton.Right) { // Rechter muisknop
+                evt.nativeEvent.preventDefault(); // voorkom contextmenu
+                this.isRotatingRight = true;
+                console.log("Player: Started rotating right (pointer down).");
+            }
+        });
+        engine.input.pointers.on('up', (evt) => {
+            if (evt.button === PointerButton.Left) {
+                this.isRotatingLeft = false;
+                console.log("Player: Stopped rotating left (pointer up).");
+            }
+            if (evt.button === PointerButton.Right) {
+                this.isRotatingRight = false;
+                console.log("Player: Stopped rotating right (pointer up).");
             }
         });
         // Voeg event listener toe voor spatiebalk (schieten)
         engine.input.keyboard.on('press', (evt) => {
             if (evt.key === Keys.Space) {
-                // Alleen _wantsToShoot op true zetten als auto-fire UIT staat
+                // Alleen wantsToShoot op true zetten als auto-fire UIT staat
                 if (!this.autoFireEnabled) {
-                    this._wantsToShoot = true;
+                    this.wantsToShoot = true;
                 }
             }
         });
         // Spacebar loslaten: wil niet meer schieten
         engine.input.keyboard.on('release', (evt) => {
             if (evt.key === Keys.Space) {
-                // _wantsToShoot wordt altijd false bij loslaten, relevant voor single press in manual mode.
-                this._wantsToShoot = false;
+                // wantsToShoot wordt altijd false bij loslaten, relevant voor single press in manual mode.
+                this.wantsToShoot = false;
             }
         });
 
@@ -52,8 +67,8 @@ export class Player extends Actor {
             if (evt.key === Keys.ShiftLeft || evt.key === Keys.ShiftRight) { // Using ShiftLeft, can add ShiftRight if needed
                 this.autoFireEnabled = !this.autoFireEnabled;
                 if (this.autoFireEnabled) {
-                    // Als auto-fire AAN gaat, reset _wantsToShoot om conflicten te voorkomen.
-                    this._wantsToShoot = false;
+                    // Als auto-fire AAN gaat, reset wantsToShoot om conflicten te voorkomen.
+                    this.wantsToShoot = false;
                 }
             }
         });
@@ -92,7 +107,7 @@ export class Player extends Actor {
             shouldAttemptShot = true;
         } else if (
             engine.input.keyboard.isHeld(Keys.Space) ||
-            this._wantsToShoot
+            this.wantsToShoot
         ) {
             shouldAttemptShot = true;
         }
@@ -101,16 +116,25 @@ export class Player extends Actor {
         if (shouldAttemptShot && this.fireCooldown <= 0) {
             this.shoot();
             this.fireCooldown = 300; // 0.3 seconde in ms
-            this._wantsToShoot = false; // reset zodat je niet kan spammen met press
+            this.wantsToShoot = false; // reset zodat je niet kan spammen met press
         }
         // Vooruit/achteruit in kijkrichting, strafe haaks erop
         const forward = Vector.fromAngle(this.rotation).scale(speed);
         const right = Vector.fromAngle(this.rotation + Math.PI / 2).scale(strafe);
         this.vel = forward.add(right);
+
+        if (this.isRotatingLeft) {
+            this.rotation -= 0.03;
+            // Optional: console.log("Player: Rotating left (held).");
+        }
+        if (this.isRotatingRight) {
+            this.rotation += 0.03;
+            // Optional: console.log("Player: Rotating right (held).");
+        }
     }
 
     shoot() {
-        if (this.fireCooldown > 0 && !this.autoFireEnabled && !this._wantsToShoot && !this.scene.engine.input.keyboard.isHeld(Keys.Space) && !this.scene.engine.input.keyboard.isHeld(Keys.Down) ) return; // Prevent spam if not auto firing or holding key
+        if (this.fireCooldown > 0 && !this.autoFireEnabled && !this.wantsToShoot && !this.scene.engine.input.keyboard.isHeld(Keys.Space) && !this.scene.engine.input.keyboard.isHeld(Keys.Down) ) return; // Prevent spam if not auto firing or holding key
         // Bepaal direction op basis van huidige rotatie
         const direction = Vector.fromAngle(this.rotation);
         // Startpositie iets voor de speler
