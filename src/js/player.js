@@ -9,10 +9,18 @@ export class Player extends Actor {
     shootDirection
     game
     fireCooldown = 0; // tijd tot volgende schot in ms
-    wantsToShoot = false; // interne flag voor click-spam blokkade
-    autoFireEnabled = false; // toggle for auto-fire
     isRotatingLeft = false;
     isRotatingRight = false;
+    bulletsFired = 0; // aantal kogels sinds laatste reload
+    reloading = false; // reload status
+    reloadTime = 1000; // reload tijd in ms
+    maxBullets = 7; // max aantal kogels voor reload
+    isTurning = false;
+    targetRotation = null;
+    turnSpeed = 4; // radians per second (adjust for faster/slower turn)
+    turnRightOnSpace = true; // default to right
+    spaceTurnCooldown = 0; // ms
+    spaceTurnCooldownTime = 3000; // 3 second cooldown in ms
 
     constructor() {
         super({ width: 50, height: 50 })
@@ -27,96 +35,120 @@ export class Player extends Actor {
         engine.input.pointers.on('down', (evt) => {
             if (evt.button === PointerButton.Left) { // Linker muisknop
                 this.isRotatingLeft = true;
-                console.log("Player: Started rotating left (pointer down).");
             }
             if (evt.button === PointerButton.Right) { // Rechter muisknop
                 evt.nativeEvent.preventDefault(); // voorkom contextmenu
                 this.isRotatingRight = true;
-                console.log("Player: Started rotating right (pointer down).");
             }
         });
         engine.input.pointers.on('up', (evt) => {
             if (evt.button === PointerButton.Left) {
                 this.isRotatingLeft = false;
-                console.log("Player: Stopped rotating left (pointer up).");
             }
             if (evt.button === PointerButton.Right) {
                 this.isRotatingRight = false;
-                console.log("Player: Stopped rotating right (pointer up).");
             }
-        });
-        // Voeg event listener toe voor spatiebalk (schieten)
-        engine.input.keyboard.on('press', (evt) => {
-            if (evt.key === Keys.Space) {
-                // Alleen wantsToShoot op true zetten als auto-fire UIT staat
-                if (!this.autoFireEnabled) {
-                    this.wantsToShoot = true;
-                }
+        });        engine.input.keyboard.on('press', (evt) => {
+            if (evt.key === Keys.D && !this.isTurning) {
+                this.turnRightOnSpace = true;
+                console.log('D pressed: turnRightOnSpace = true');
             }
-        });
-        // Spacebar loslaten: wil niet meer schieten
-        engine.input.keyboard.on('release', (evt) => {
-            if (evt.key === Keys.Space) {
-                // wantsToShoot wordt altijd false bij loslaten, relevant voor single press in manual mode.
-                this.wantsToShoot = false;
-            }
-        });
-
-        // Event listener for Shift key to toggle auto-fire
-        engine.input.keyboard.on('press', (evt) => {
-            if (evt.key === Keys.ShiftLeft || evt.key === Keys.ShiftRight) { // Using ShiftLeft, can add ShiftRight if needed
-                this.autoFireEnabled = !this.autoFireEnabled;
-                if (this.autoFireEnabled) {
-                    // Als auto-fire AAN gaat, reset wantsToShoot om conflicten te voorkomen.
-                    this.wantsToShoot = false;
-                }
+            if (evt.key === Keys.A && !this.isTurning) {
+                this.turnRightOnSpace = false;
+                console.log('A pressed: turnRightOnSpace = false');
             }
         });
         // ...eventuele andere initialisatie code...
     }
 
-    onPreUpdate(engine, delta) {
+    // Helper to normalize angle between -PI and PI
+    normalizeAngle(angle) {
+        while (angle > Math.PI) angle -= 2 * Math.PI;
+        while (angle < -Math.PI) angle += 2 * Math.PI;
+        return angle;
+    }    onPreUpdate(engine, delta) {
+        // Tijdens reload kan niet geschoten worden, maar bewegen moet wel kunnen
         let speed = 0;
         let strafe = 0;
-        if (engine.input.keyboard.isHeld(Keys.W)) {
-            speed = (this.moveSpeed ?? 150);
-        }
-        if (engine.input.keyboard.isHeld(Keys.S)) {
-            speed = -(this.moveSpeed ?? 150);
-        }
-        if (engine.input.keyboard.isHeld(Keys.D)) {
-            strafe = (this.moveSpeed ?? 150);
-        }
-        if (engine.input.keyboard.isHeld(Keys.A)) {
-            strafe = -(this.moveSpeed ?? 150);
+        
+        // Disable WASD movement during turn animation
+        if (!this.isTurning) {
+            if (engine.input.keyboard.isHeld(Keys.W)) {
+                speed = (this.moveSpeed ?? 150);
+            }
+            if (engine.input.keyboard.isHeld(Keys.S)) {
+                speed = -(this.moveSpeed ?? 150);
+            }
+            if (engine.input.keyboard.isHeld(Keys.D)) {
+                strafe = (this.moveSpeed ?? 150);
+            }
+            if (engine.input.keyboard.isHeld(Keys.A)) {
+                strafe = -(this.moveSpeed ?? 150);
+            }
         }
         if (engine.input.keyboard.isHeld(Keys.Right)) {
-            this.rotation += 0.02; 
+            this.rotation += 0.0225; 
         }
         if (engine.input.keyboard.isHeld(Keys.Left) ) {
-            this.rotation -= 0.02; 
+            this.rotation -= 0.025; 
+        }
+        if (engine.input.keyboard.isHeld(Keys.ShiftLeft) || engine.input.keyboard.isHeld(Keys.ShiftRight)) { // Added back shift check
+        }
+        if (this.spaceTurnCooldown > 0) {
+            this.spaceTurnCooldown -= delta;
+        }
+        // Update turnRightOnSpace based on currently held keys, but NOT during turn animation
+        if (!this.isTurning) {
+            if (engine.input.keyboard.isHeld(Keys.D)) {
+                this.turnRightOnSpace = true;
+            } else if (engine.input.keyboard.isHeld(Keys.A)) {
+                this.turnRightOnSpace = false;
+            }
+        }
+        if (!this.isTurning && this.spaceTurnCooldown <= 0 && engine.input.keyboard.isHeld(Keys.Space)) {
+            this.isTurning = true;
+            this.spaceTurnCooldown = this.spaceTurnCooldownTime;
+            if (this.turnRightOnSpace) {
+                this.targetRotation = this.normalizeAngle(this.rotation + Math.PI);
+            } else {
+                this.targetRotation = this.normalizeAngle(this.rotation - Math.PI);
+            }
+        }
+        // Animate turn if needed
+        if (this.isTurning && this.targetRotation !== null) {
+            const step = this.turnSpeed * (delta / 1000); // delta in ms
+            let diff = this.normalizeAngle(this.targetRotation - this.rotation);
+            
+            // Force the direction based on turnRightOnSpace to avoid shortest path issues
+            if (this.turnRightOnSpace) {
+                // Force clockwise rotation (positive direction)
+                if (diff < 0) diff += 2 * Math.PI;
+            } else {
+                // Force counter-clockwise rotation (negative direction) 
+                if (diff > 0) diff -= 2 * Math.PI;
+            }
+            
+            if (Math.abs(diff) <= step) {
+                this.rotation = this.targetRotation;
+                this.isTurning = false;
+                this.targetRotation = null;
+            } else {
+                this.rotation = this.normalizeAngle(this.rotation + Math.sign(diff) * step);
+            }
         }
         // FIRE RATE LOGICA
         if (this.fireCooldown > 0) {
             this.fireCooldown -= delta;
         }
 
-        // Determine if a shot should be attempted this frame
-        let shouldAttemptShot = false;
-        if (this.autoFireEnabled) {
-            shouldAttemptShot = true;
-        } else if (
-            engine.input.keyboard.isHeld(Keys.Space) ||
-            this.wantsToShoot
-        ) {
-            shouldAttemptShot = true;
-        }
-        
-        // Alleen schieten als fireCooldown <= 0 en een schot poging is
-        if (shouldAttemptShot && this.fireCooldown <= 0) {
+        // Tijdens reload kan niet geschoten worden, maar bewegen mag wel
+        if (!this.reloading && this.fireCooldown <= 0) {
             this.shoot();
+            this.bulletsFired++;
             this.fireCooldown = 300; // 0.3 seconde in ms
-            this.wantsToShoot = false; // reset zodat je niet kan spammen met press
+            if (this.bulletsFired >= this.maxBullets) {
+                this.startReload();
+            }
         }
         // Vooruit/achteruit in kijkrichting, strafe haaks erop
         const forward = Vector.fromAngle(this.rotation).scale(speed);
@@ -124,17 +156,14 @@ export class Player extends Actor {
         this.vel = forward.add(right);
 
         if (this.isRotatingLeft) {
-            this.rotation -= 0.03;
-            // Optional: console.log("Player: Rotating left (held).");
+            this.rotation -= 0.0275;
         }
         if (this.isRotatingRight) {
-            this.rotation += 0.03;
-            // Optional: console.log("Player: Rotating right (held).");
+            this.rotation += 0.0275;
         }
     }
 
     shoot() {
-        if (this.fireCooldown > 0 && !this.autoFireEnabled && !this.wantsToShoot && !this.scene.engine.input.keyboard.isHeld(Keys.Space) && !this.scene.engine.input.keyboard.isHeld(Keys.Down) ) return; // Prevent spam if not auto firing or holding key
         // Bepaal direction op basis van huidige rotatie
         const direction = Vector.fromAngle(this.rotation);
         // Startpositie iets voor de speler
@@ -149,6 +178,14 @@ export class Player extends Actor {
             // fallback: probeer parent
             this.parent?.add(bullet);
         }
+    }
+
+    startReload() {
+        this.reloading = true;
+        setTimeout(() => {
+            this.bulletsFired = 0;
+            this.reloading = false;
+        }, this.reloadTime);
     }
 
     takeHit() {
