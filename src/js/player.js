@@ -1,6 +1,8 @@
-import { Actor, Vector, Engine, Keys, PointerButton } from "excalibur"
+import { Actor, Vector, Engine, Keys, PointerButton, CollisionType } from "excalibur"
 import { Resources } from "./resources.js"
 import { Bullet } from "./bullet.js"
+import { SlowZombie } from "./slowzombie.js"; 
+import { FastZombie } from "./fastzombie.js"; 
 
 export class Player extends Actor {
     moveSpeed
@@ -22,43 +24,72 @@ export class Player extends Actor {
     spaceTurnCooldown = 0; // ms
     spaceTurnCooldownTime = 1000; // 3 second cooldown in ms
     isSprinting = false;
+    dashDistance = 100; // Distance for the backward dash
+    dashCooldown = 0; // Cooldown timer for dashing
+    dashCooldownTime = 1500; // 1.5 seconds cooldown for dash
+    isDashing = false; // Whether player is currently dashing
+    dashSpeed = 800; // Speed during dash animation
+    dashDirection = null; // Direction of the dash
+    dashRemaining = 0; // Remaining distance to dash
+    lastSDoublePressTime = 0;
+    sPressCount = 0;
+    doubleSPressThreshold = 300; // ms
 
     constructor() {
-        super({ width: 50, height: 50 })
-        this.graphics.use(Resources.Player.toSprite())
-        this.graphics.flipHorizontal = true; // Flip the sprite horizontally again
+        super({ 
+            width: 32, // keep logical size
+            height: 32,
+            collisionType: CollisionType.Active
+        })
+        const sprite = Resources.Player.toSprite();
+        sprite.scale = new Vector(0.9, 0.9); // Scale sprite to 90%
+        sprite.rotation = -Math.PI / 2; // Rotate sprite to face up
+        this.graphics.use(sprite)
         this.pos = new Vector(100, 100)
         this.vel = new Vector(0, 0)
+        console.log("Player constructor voltooid. Sprite scale: 0.9, facing up");
     }
 
     onInitialize(engine) {
-        // Voeg event listener toe voor muisknoppen (alleen rotatie)
-        engine.input.pointers.on('down', (evt) => {
-            if (evt.button === PointerButton.Left) { // Linker muisknop
-                this.isRotatingLeft = true;
-            }
-            if (evt.button === PointerButton.Right) { // Rechter muisknop
-                evt.nativeEvent.preventDefault(); // voorkom contextmenu
-                this.isRotatingRight = true;
-            }
-        });
-        engine.input.pointers.on('up', (evt) => {
-            if (evt.button === PointerButton.Left) {
-                this.isRotatingLeft = false;
-            }
-            if (evt.button === PointerButton.Right) {
-                this.isRotatingRight = false;
-            }
-        });        engine.input.keyboard.on('press', (evt) => {
+        console.log("Player onInitialize aangeroepen.");
+        // Verwijder event listener voor muisknoppen (alleen rotatie)
+        // engine.input.pointers.on('down', ...)
+        // engine.input.pointers.on('up', ...)
+        engine.input.keyboard.on('press', (evt) => {
             if (evt.key === Keys.D && !this.isTurning) {
                 this.turnRightOnSpace = true;
-                console.log('D pressed: turnRightOnSpace = true');
             }
             if (evt.key === Keys.A && !this.isTurning) {
                 this.turnRightOnSpace = false;
-                console.log('A pressed: turnRightOnSpace = false');
+            }
+            // Double-press S for dash
+            if (evt.key === Keys.S) {
+                const now = Date.now();
+                if (now - this.lastSDoublePressTime < this.doubleSPressThreshold) {
+                    this.sPressCount++;
+                } else {
+                    this.sPressCount = 1;
+                }
+                this.lastSDoublePressTime = now;
+                if (this.sPressCount === 2) {
+                    if (this.dashCooldown <= 0 && !this.isTurning && !this.isDashing) {
+                        console.log("Player double-pressed S for backward dash!");
+                        this.isDashing = true;
+                        this.dashDirection = Vector.fromAngle(this.rotation).scale(-1);
+                        this.dashRemaining = this.dashDistance;
+                        this.dashCooldown = this.dashCooldownTime;
+                    }
+                    this.sPressCount = 0;
+                }
             }
         });
+        this.on('collisionstart', (event) => {
+            if (event.other instanceof SlowZombie || event.other instanceof FastZombie) {
+                console.log('SPELER RAAKT ZOMBIE! (Gedetecteerd door Player)');
+                // Hier kun je logica toevoegen, bijv. this.takeHit();
+            }
+        });
+        console.log("Player collision logic initialized (Active by default)!");
         // ...eventuele andere initialisatie code...
     }
 
@@ -67,22 +98,20 @@ export class Player extends Actor {
         while (angle > Math.PI) angle -= 2 * Math.PI;
         while (angle < -Math.PI) angle += 2 * Math.PI;
         return angle;
-    }    onPreUpdate(engine, delta) {
+    }
+    onPreUpdate(engine, delta) {
         // Tijdens reload kan niet geschoten worden, maar bewegen moet wel kunnen
         let speed = 0;
         let strafe = 0;
         const baseSpeed = (this.moveSpeed ?? 150);
 
-        this.isSprinting = engine.input.keyboard.isHeld(Keys.ShiftLeft) || engine.input.keyboard.isHeld(Keys.ShiftRight);
+        this.isSprinting = engine.input.keyboard.isHeld(Keys.ShiftLeft);
 
-        if (this.isSprinting) {
-            console.log("Shift held: Sprinting active, shooting disabled.");
-        }
         
         // Disable WASD movement during turn animation
         if (!this.isTurning) {
             if (engine.input.keyboard.isHeld(Keys.W)) {
-                speed = this.isSprinting ? baseSpeed * 2.5 : baseSpeed;
+                speed = this.isSprinting ? baseSpeed * 2 : baseSpeed;
             }
             if (engine.input.keyboard.isHeld(Keys.S)) {
                 speed = -baseSpeed; // Sprinting does not affect backward movement
@@ -95,10 +124,10 @@ export class Player extends Actor {
             }
         }
         if (engine.input.keyboard.isHeld(Keys.Right)) {
-            this.rotation += 0.0225; 
+            this.rotation += 0.02; 
         }
         if (engine.input.keyboard.isHeld(Keys.Left) ) {
-            this.rotation -= 0.025; 
+            this.rotation -= 0.02; 
         }
         if (engine.input.keyboard.isHeld(Keys.ShiftLeft) || engine.input.keyboard.isHeld(Keys.ShiftRight)) { // Added back shift check
             // This console log is now handled by the isSprinting logic
@@ -106,6 +135,42 @@ export class Player extends Actor {
         if (this.spaceTurnCooldown > 0) {
             this.spaceTurnCooldown -= delta;
         }
+
+        if (this.dashCooldown > 0) {
+            this.dashCooldown -= delta;
+        }
+
+        // Handle Dash
+        if (engine.input.keyboard.wasPressed(Keys.Down) && this.dashCooldown <= 0 && !this.isTurning && !this.isDashing) {
+            console.log("Player started backward dash!");
+            this.isDashing = true;
+            this.dashDirection = Vector.fromAngle(this.rotation).scale(-1); // Opposite of current facing direction
+            this.dashRemaining = this.dashDistance;
+            this.dashCooldown = this.dashCooldownTime;
+        }
+
+        // Animate the dash
+        if (this.isDashing) {
+            const dashStep = this.dashSpeed * (delta / 1000); // Speed * time = distance
+            
+            if (dashStep >= this.dashRemaining) {
+                // Dash is complete
+                this.pos = this.pos.add(this.dashDirection.scale(this.dashRemaining));
+                this.isDashing = false;
+                this.dashDirection = null;
+                this.dashRemaining = 0;
+                console.log("Player dash completed!");
+            } else {
+                // Continue dashing
+                this.pos = this.pos.add(this.dashDirection.scale(dashStep));
+                this.dashRemaining -= dashStep;
+            }
+            
+            // During dash, override normal velocity
+            this.vel = Vector.Zero;
+            return; // Skip the rest of movement logic during dash
+        }
+
         // Update turnRightOnSpace based on currently held keys, but NOT during turn animation
         if (!this.isTurning) {
             if (engine.input.keyboard.isHeld(Keys.D)) {
@@ -155,7 +220,7 @@ export class Player extends Actor {
         if (!this.reloading && !this.isSprinting && !this.isTurning && this.fireCooldown <= 0) {
             this.shoot();
             this.bulletsFired++;
-            this.fireCooldown = 300; // 0.3 seconde in ms
+            this.fireCooldown = 100// 0.3 seconde in ms
             if (this.bulletsFired >= this.maxBullets) {
                 this.startReload();
             }
@@ -166,10 +231,10 @@ export class Player extends Actor {
         this.vel = forward.add(right);
 
         if (this.isRotatingLeft) {
-            this.rotation -= 0.0275;
+            this.rotation -= 0.02;
         }
         if (this.isRotatingRight) {
-            this.rotation += 0.0275;
+            this.rotation += 0.02;
         }
     }
 

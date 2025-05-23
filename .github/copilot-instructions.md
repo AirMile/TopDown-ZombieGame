@@ -2,6 +2,7 @@ I am using the excaliburjs library at https://github.com/excaliburjs/Excalibur a
 Please use the following code examples to format classes in the game. I use vite to test and build the game. 
 I do not use the global "ex." namespace for excalibur.
 Please add console.logs when adding new features to see if everything works.
+Please don't shy away from creating new functions, I rather have a new function than a lot of messy pseudocode
 
 import {Engine, Actor, Vector} from "excalibur";
 import {Player} from "./player.js";
