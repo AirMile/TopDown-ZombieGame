@@ -3,8 +3,8 @@ import { Resources } from "../resources.js";
 import { PlayerWeapon } from "./playerweapon.js";
 import { PlayerMovement } from "./playermovement.js";
 import { PlayerInput } from "./playerinput.js";
-import { SlowZombie } from "../slowzombie.js";
-import { FastZombie } from "../fastzombie.js";
+import { SlowZombie } from "../zombies/slowzombie.js";
+import { FastZombie } from "../zombies/fastzombie.js";
 
 export class Player extends Actor {
     constructor() {

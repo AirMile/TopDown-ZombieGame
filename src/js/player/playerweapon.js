@@ -1,5 +1,5 @@
 import { Vector } from "excalibur";
-import { Bullet } from "../bullet.js";
+import { Bullet } from "../weapons/bullet.js";
 
 export class PlayerWeapon {
     fireCooldown = 0;

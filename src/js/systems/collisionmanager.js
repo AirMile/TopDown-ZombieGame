@@ -1,7 +1,7 @@
-import { Player } from "./player/player.js";
-import { SlowZombie } from "./slowzombie.js";
-import { FastZombie } from "./fastzombie.js";
-import { Bullet } from "./bullet.js";
+import { Player } from "../player/player.js";
+import { SlowZombie } from "../zombies/slowzombie.js";
+import { FastZombie } from "../zombies/fastzombie.js";
+import { Bullet } from "../weapons/bullet.js";
 
 export class CollisionManager {
     constructor(engine, gameInstance = null) {

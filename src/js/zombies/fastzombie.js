@@ -1,7 +1,7 @@
 import { Zombie } from "./zombie.js"
 import { Vector, Color, CollisionType } from "excalibur"
-import { Resources } from "./resources.js"
-import { Player } from "./player/player.js";
+import { Resources } from "../resources.js"
+import { Player } from "../player/player.js";
 
 export class FastZombie extends Zombie {
     constructor() {

@@ -1,5 +1,5 @@
 import { Actor, Vector } from "excalibur"
-import { Resources } from "./resources.js"
+import { Resources } from "../resources.js"
 
 export class Zombie extends Actor {
     constructor(options) { // Accept options object
