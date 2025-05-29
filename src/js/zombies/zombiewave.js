@@ -1,34 +1,28 @@
 export class ZombieWaveManager {
     constructor(spawner, uiManager = null) {
         this.spawner = spawner;
-        this.uiManager = uiManager;
-        this.currentWave = 0;
+        this.uiManager = uiManager;        this.currentWave = 0;
         this.waves = [];
         this.waveTimer = null;
-        console.log("ZombieWaveManager initialized");
     }
 
-    addWave(waveConfig) {
-        this.waves.push({
+    addWave(waveConfig) {        this.waves.push({
             number: this.waves.length + 1,
             enemies: waveConfig.enemies,
             delay: waveConfig.delay || 0,
             message: waveConfig.message || `Wave ${this.waves.length + 1}`
         });
-        console.log(`Wave ${this.waves.length} added: ${waveConfig.message || `Wave ${this.waves.length}`}`);
     }
 
     startWaves() {
         this.currentWave = 0;
         this.spawnNextWave();
-    }
-
-    spawnNextWave() {
+    }    spawnNextWave() {
         if (this.currentWave >= this.waves.length) {
-            console.log("All waves completed!");
             return;
-        }        const wave = this.waves[this.currentWave];
-        console.log(`Starting ${wave.message}`);
+        }
+
+        const wave = this.waves[this.currentWave];
         
         // Show wave announcement in UI if available
         if (this.uiManager) {
@@ -52,13 +46,10 @@ export class ZombieWaveManager {
             const nextWave = this.waves[this.currentWave];
             this.waveTimer = setTimeout(() => this.spawnNextWave(), nextWave.delay);
         }
-    }
-
-    stopWaves() {
+    }    stopWaves() {
         if (this.waveTimer) {
             clearTimeout(this.waveTimer);
             this.waveTimer = null;
-            console.log("Wave timer stopped");
         }
     }
 

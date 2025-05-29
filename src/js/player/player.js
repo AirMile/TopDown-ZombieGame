@@ -21,12 +21,10 @@ export class Player extends Actor {
         this.graphics.use(sprite);
         
         this.pos = new Vector(100, 100);
-        this.vel = new Vector(0, 0);
-
-        // Initialize subsystems
+        this.vel = new Vector(0, 0);        // Initialize subsystems
         this.weapon = new PlayerWeapon(this);
         this.movement = new PlayerMovement(this);
-        this.input = new PlayerInput(this);        console.log("Player constructor voltooid met subsystems");
+        this.input = new PlayerInput(this);
 
         // Initialize health system
         this.maxHealth = 100;
@@ -34,11 +32,7 @@ export class Player extends Actor {
         this.isInvulnerable = false;
         this.invulnerabilityTime = 1000; // 1 second
         this.invulnerabilityTimer = 0;
-    }
-
-    onInitialize(engine) {
-        console.log("Player onInitialize aangeroepen");
-        
+    }    onInitialize(engine) {
         // Setup input handlers
         engine.input.keyboard.on('press', (evt) => {
             // Double-S for dash
@@ -63,9 +57,9 @@ export class Player extends Actor {
             // R key for manual reload
             if (evt.key === Keys.R) {
                 if (this.weapon) {
-                    this.weapon.manualReload();
-                }
-            }        });
+                    this.weapon.manualReload();                }
+            }
+        });
     }
 
     onPreUpdate(engine, delta) {
@@ -74,7 +68,6 @@ export class Player extends Actor {
             this.invulnerabilityTimer -= delta;
             if (this.invulnerabilityTimer <= 0) {
                 this.isInvulnerable = false;
-                console.log("Player invulnerability ended");
             }
         }
 
@@ -101,23 +94,19 @@ export class Player extends Actor {
 
         // Apply movement if not dashing
         if (!this.movement.isDashing) {
-            this.vel = this.movement.calculateVelocity(speed, strafe);
-        } else {
+            this.vel = this.movement.calculateVelocity(speed, strafe);        } else {
             this.vel = Vector.Zero;
         }
     }
 
     takeHit(damage = 10) {
         if (this.isInvulnerable) {
-            console.log("Player hit but invulnerable!");
             return;
         }
 
         this.currentHealth -= damage;
         this.isInvulnerable = true;
         this.invulnerabilityTimer = this.invulnerabilityTime;
-        
-        console.log(`Player took ${damage} damage! Health: ${this.currentHealth}/${this.maxHealth}`);
         
         // Update UI if available
         if (this.scene?.engine?.uiManager) {
@@ -127,12 +116,10 @@ export class Player extends Actor {
         // Check for death
         if (this.currentHealth <= 0) {
             this.currentHealth = 0;
-            this.handleDeath();
-        }
+            this.handleDeath();        }
     }
 
     handleDeath() {
-        console.log("Player died!");
         // TODO: Trigger game over
         if (this.scene?.engine?.endGame) {
             this.scene.engine.endGame();
@@ -148,7 +135,6 @@ export class Player extends Actor {
     heal(amount) {
         const oldHealth = this.currentHealth;
         this.currentHealth = Math.min(this.maxHealth, this.currentHealth + amount);
-        console.log(`Player healed ${amount}! Health: ${this.currentHealth}/${this.maxHealth}`);
         
         // Update UI if available
         if (this.scene?.engine?.uiManager) {

@@ -13,7 +13,7 @@ export class PlayerWeapon {
     constructor(player, uiManager = null) {
         this.player = player;
         this.uiManager = uiManager;
-        console.log("PlayerWeapon initialized");
+        
         
         // Update initial ammo display
         this.updateAmmoUI();
@@ -40,7 +40,7 @@ export class PlayerWeapon {
             this.player.scene.engine.add(bullet);
         }        this.bulletsFired++;
         this.fireCooldown = this.fireRate;
-        console.log(`Schot afgevuurd! Kogels: ${this.bulletsFired}/${this.maxBullets}`);
+        
 
         // Update ammo UI
         this.updateAmmoUI();
@@ -50,7 +50,7 @@ export class PlayerWeapon {
         }
     }    startReload() {
         this.reloading = true;
-        console.log("Reloading...");
+        
         
         // Show reload indicator in UI
         if (this.uiManager) {
@@ -60,7 +60,7 @@ export class PlayerWeapon {
         setTimeout(() => {
             this.bulletsFired = 0;
             this.reloading = false;
-            console.log("Reload complete!");
+            
             
             // Hide reload indicator and update ammo UI
             if (this.uiManager) {
@@ -73,7 +73,7 @@ export class PlayerWeapon {
     // Manual reload (can be triggered by R key)
     manualReload() {
         if (!this.reloading && this.bulletsFired > 0) {
-            console.log("Manual reload triggered");
+            
             this.startReload();
             return true;
         }
@@ -103,6 +103,6 @@ export class PlayerWeapon {
     setUIManager(uiManager) {
         this.uiManager = uiManager;
         this.updateAmmoUI();
-        console.log("UI Manager attached to weapon system");
+        
     }
 }

@@ -28,11 +28,7 @@ export class Game extends Engine {
         this.collisionManager = null;
         
         this.start(ResourceLoader).then(() => this.startGame());
-    }
-
-    startGame() {
-        console.log("Starting the game!");
-        
+    }    startGame() {
         // Initialize systems
         this.initializePlayer();
         this.initializeSpawner();
@@ -42,12 +38,9 @@ export class Game extends Engine {
         
         // Start the game
         this.spawnInitialZombies();
-    }
-
-    initializePlayer() {
+    }    initializePlayer() {
         this.player = new Player();
         this.add(this.player);
-        console.log("Player initialized and added to game");
     }
 
     initializeSpawner() {
@@ -69,34 +62,30 @@ export class Game extends Engine {
                 { type: 'slow', count: 8, startX: 200, startY: 200 },
                 { type: 'fast', count: 5, startX: 900, startY: 400 }
             ],
-            delay: 30000, // 30 seconds after wave 1
-            message: "Wave 2: Getting Serious"
+            delay: 30000, // 30 seconds after wave 1            message: "Wave 2: Getting Serious"
         });
-        
-        console.log("Spawner and wave manager initialized");
-    }    initializeUI() {
+    }
+
+    initializeUI() {
         this.uiManager = new UIManager(this);
         this.uiManager.createTimer(this.gameTimeRemaining);
         this.uiManager.createAmmoCounter();
         this.uiManager.createReloadIndicator();
         this.uiManager.createHealthCounter(this.player.currentHealth, this.player.maxHealth);
         this.uiManager.createScoreCounter();
-        
-        // Connect UI to player weapon system
+          // Connect UI to player weapon system
         if (this.player && this.player.weapon) {
             this.player.weapon.setUIManager(this.uiManager);
         }
-        
-        console.log("UI initialized");
-    }initializeCollisions() {
+    }
+
+    initializeCollisions() {
         this.collisionManager = new CollisionManager(this, this);
         this.collisionManager.setupCollisions();
-        console.log("Collision manager initialized and global collisions setup");
     }
 
     setupCamera() {
         this.currentScene.camera.strategy.lockToActor(this.player);
-        console.log("Camera locked to player");
     }
 
     spawnInitialZombies() {
@@ -118,9 +107,7 @@ export class Game extends Engine {
             spreadX: 60,
             spreadY: 200
         });
-        
-        this.spawner.spawnAll();
-        console.log("Initial zombies spawned");
+          this.spawner.spawnAll();
         
         // Optionally start wave system instead
         // this.waveManager.startWaves();
@@ -169,9 +156,7 @@ export class Game extends Engine {
         }
     }
 
-    endGame() {
-        this.isGameOver = true;
-        console.log("Game Over!");
+    endGame() {        this.isGameOver = true;
         this.uiManager.createGameOverScreen();
         
         // Stop any ongoing waves
@@ -200,14 +185,10 @@ export class Game extends Engine {
             currentWave: this.waveManager?.getCurrentWave() || 0,
             totalWaves: this.waveManager?.getTotalWaves() || 0
         };
-    }
-
-    // Debug method to spawn test zombies
+    }    // Debug method to spawn test zombies
     spawnTestZombies() {
-        console.log("Spawning test zombies for collision testing...");
         this.spawner.spawnZombieAt('slow', 200, 150);
         this.spawner.spawnZombieAt('fast', 250, 150);
-        console.log("Test zombies spawned near player");
     }
 }
 

@@ -1,10 +1,10 @@
 import { Label, Font, Color, Vector, CoordPlane, TextAlign } from "excalibur";
 
 export class UIManager {
+    
     constructor(engine) {
         this.engine = engine;
         this.elements = new Map();
-        console.log("UIManager initialized");
     }
 
     // Create timer display
@@ -25,7 +25,6 @@ export class UIManager {
         
         this.engine.add(timer);
         this.elements.set('timer', timer);
-        console.log("Timer UI created");
         return timer;
     }
 
@@ -47,7 +46,7 @@ export class UIManager {
         
         this.engine.add(ammoLabel);
         this.elements.set('ammo', ammoLabel);
-        console.log("Ammo counter created");
+        
         return ammoLabel;
     }
 
@@ -70,7 +69,7 @@ export class UIManager {
         
         this.engine.add(reloadLabel);
         this.elements.set('reload', reloadLabel);
-        console.log("Reload indicator created");
+        
         return reloadLabel;
     }
 
@@ -92,7 +91,7 @@ export class UIManager {
         
         this.engine.add(healthLabel);
         this.elements.set('health', healthLabel);
-        console.log("Health counter created");
+        
         return healthLabel;
     }
 
@@ -114,25 +113,21 @@ export class UIManager {
         
         this.engine.add(scoreLabel);
         this.elements.set('score', scoreLabel);
-        console.log("Score counter created");
+        
         return scoreLabel;
     }
 
     // Update timer display
     updateTimer(timeRemaining) {
-        const timer = this.elements.get('timer');
-        if (timer) {
+        const timer = this.elements.get('timer');        if (timer) {
             timer.text = this.formatTime(timeRemaining);
-            console.log(`Timer updated: ${this.formatTime(timeRemaining)}`);
         }
     }
 
     // Update ammo display
     updateAmmo(current, max) {
-        const ammo = this.elements.get('ammo');
-        if (ammo) {
+        const ammo = this.elements.get('ammo');        if (ammo) {
             ammo.text = `Ammo: ${current}/${max}`;
-            console.log(`Ammo updated: ${current}/${max}`);
         }
     }
 
@@ -143,34 +138,27 @@ export class UIManager {
             health.text = `Health: ${current}/${max}`;
             
             // Change color based on health percentage
-            const healthPercent = current / max;
-            if (healthPercent > 0.6) {
+            const healthPercent = current / max;            if (healthPercent > 0.6) {
                 health.font.color = Color.Green;
             } else if (healthPercent > 0.3) {
                 health.font.color = Color.Yellow;
             } else {
                 health.font.color = Color.Red;
             }
-            
-            console.log(`Health updated: ${current}/${max} (${(healthPercent * 100).toFixed(0)}%)`);
         }
     }
 
     // Update score display
     updateScore(score) {
-        const scoreElement = this.elements.get('score');
-        if (scoreElement) {
+        const scoreElement = this.elements.get('score');        if (scoreElement) {
             scoreElement.text = `Score: ${score}`;
-            console.log(`Score updated: ${score}`);
         }
     }
 
     // Show/hide reload indicator
     showReloadIndicator(show) {
-        const reload = this.elements.get('reload');
-        if (reload) {
+        const reload = this.elements.get('reload');        if (reload) {
             reload.visible = show;
-            console.log(`Reload indicator ${show ? 'shown' : 'hidden'}`);
         }
     }
 
@@ -200,7 +188,7 @@ export class UIManager {
         
         this.engine.add(gameOverLabel);
         this.elements.set('gameOver', gameOverLabel);
-        console.log("Game over screen created");
+        
         return gameOverLabel;
     }
 
@@ -225,10 +213,10 @@ export class UIManager {
         // Auto-remove after duration
         setTimeout(() => {
             this.engine.remove(announcement);
-            console.log(`Wave announcement removed: ${text}`);
+            
         }, duration);
         
-        console.log(`Wave announcement created: ${text}`);
+        
         return announcement;
     }
 
@@ -237,7 +225,7 @@ export class UIManager {
         const timer = this.elements.get('timer');
         if (timer) {
             timer.text = "Game Over!";
-            console.log("Timer changed to Game Over message");
+            
         }
         this.createGameOverScreen();
     }
@@ -246,10 +234,10 @@ export class UIManager {
     clearAll() {
         this.elements.forEach((element, key) => {
             this.engine.remove(element);
-            console.log(`Removed UI element: ${key}`);
+            
         });
         this.elements.clear();
-        console.log("All UI elements cleared");
+        
     }
 
     // Get UI element by name

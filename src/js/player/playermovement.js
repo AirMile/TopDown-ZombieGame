@@ -12,7 +12,7 @@ export class PlayerMovement {
 
     constructor(player) {
         this.player = player;
-        console.log("PlayerMovement initialized");
+        
     }
 
     update(delta) {
@@ -34,7 +34,7 @@ export class PlayerMovement {
     startDash(direction = -1) {
         if (this.dashCooldown > 0 || this.isDashing) return false;
 
-        console.log("Starting dash!");
+        
         this.isDashing = true;
         this.dashDirection = Vector.fromAngle(this.player.rotation).scale(direction);
         this.dashRemaining = this.dashDistance;
@@ -50,7 +50,7 @@ export class PlayerMovement {
             this.isDashing = false;
             this.dashDirection = null;
             this.dashRemaining = 0;
-            console.log("Dash completed!");
+            
         } else {
             this.player.pos = this.player.pos.add(this.dashDirection.scale(dashStep));
             this.dashRemaining -= dashStep;

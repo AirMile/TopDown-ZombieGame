@@ -13,7 +13,7 @@ export class PlayerInput {
 
     constructor(player) {
         this.player = player;
-        console.log("PlayerInput initialized");
+        
     }
 
     update(engine, delta) {
@@ -72,7 +72,7 @@ export class PlayerInput {
         this.spaceTurnCooldown = this.spaceTurnCooldownTime;
         const turnAmount = this.turnRightOnSpace ? Math.PI : -Math.PI;
         this.targetRotation = this.normalizeAngle(this.player.rotation + turnAmount);
-        console.log("Starting 180 turn");
+        
     }
 
     animateTurn(delta) {
@@ -86,7 +86,7 @@ export class PlayerInput {
             this.player.rotation = this.targetRotation;
             this.isTurning = false;
             this.targetRotation = null;
-            console.log("180 turn completed");
+            
         } else {
             this.player.rotation = this.normalizeAngle(this.player.rotation + Math.sign(diff) * step);
         }

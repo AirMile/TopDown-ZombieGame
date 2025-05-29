@@ -13,23 +13,20 @@ export class Bullet extends Actor {
             height: 5, 
             color: Color.Yellow,
             collisionType: CollisionType.Active
-        });
-        this.vel = richting.normalize().scale(400);
+        });        this.vel = richting.normalize().scale(400);
         this.startPos = new Vector(x, y);
-        console.log("Bullet created at", x, y);
-    }    onPreUpdate(engine, delta) {
-        // Update lifetime
+    }
+
+    onPreUpdate(engine, delta) {        // Update lifetime
         this.lifetime -= delta;
         if (this.lifetime <= 0) {
             this.kill();
-            console.log("Bullet expired");
             return;
         }
 
         // Check range
         if (this.pos.distance(this.startPos) > this.range) {
             this.kill();
-            console.log("Bullet out of range");
         }
     }
 }

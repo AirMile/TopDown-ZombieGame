@@ -3,8 +3,6 @@ import { ImageSource, Sound, Resource, Loader } from 'excalibur'
 // voeg hier jouw eigen resources toe
 const Resources = {
     Player: new ImageSource('images/femalePlayer.png'),
-    SlowZombie: new ImageSource('images/fish.png'),
-    FastZombie: new ImageSource('images/fish.png'),
     // New fast zombies
     FastZombie1: new ImageSource('images/fastZombie1.png'),
     FastZombie2: new ImageSource('images/fastZombie2.png'),
