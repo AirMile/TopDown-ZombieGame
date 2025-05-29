@@ -17,6 +17,13 @@ export class Zombie extends Actor {
         // Algemene collision logic voor zombies kan hier, of in subclasses.
     }
 
+    // Method for taking damage from bullets
+    takeDamage(damage) {
+        console.log(`${this.constructor.name} took ${damage} damage`);
+        this.kill();
+        console.log(`${this.constructor.name} is destroyed`);
+    }
+
     // kill() { // Implementeer een kill methode als die nog niet bestaat of in Actor zit
     //     super.kill(); // Roep de kill methode van Actor aan
     //     console.log(`"${this.constructor.name} is gedood."`);

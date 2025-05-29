@@ -1,102 +1,215 @@
-import '../css/style.css'
-import { Actor, Engine, Vector, DisplayMode, Label, Font, Color, CoordPlane, TextAlign } from "excalibur"
-import { Resources, ResourceLoader } from './resources.js'
-import { Player } from './player.js'
-import { Zombie } from './zombie.js'
-import { SlowZombie } from './slowzombie.js'
-import { FastZombie } from './fastzombie.js'
+import '../css/style.css';
+import { Engine, DisplayMode } from "excalibur";
+import { ResourceLoader } from './resources.js';
+import { Player } from './player/player.js';
+import { ZombieSpawner } from './zombiespawner.js';
+import { ZombieWaveManager } from './zombiewave.js';
+import { UIManager } from './uimanager.js';
+import { CollisionManager } from './collisionmanager.js';
 
 export class Game extends Engine {
-    player // Declare player property
-    gameTimeRemaining = 180; // 3 minutes in seconds
-    timerLabel;
-    isGameOver = false;
-
     constructor() {
         super({ 
             width: 1280,
             height: 720,
             maxFps: 60,
             displayMode: DisplayMode.FitScreen
-         })
-        this.start(ResourceLoader).then(() => this.startGame())
+        });
+        
+        // Game state
+        this.gameTimeRemaining = 180; // 3 minutes
+        this.isGameOver = false;
+        
+        // Initialize systems
+        this.player = null;
+        this.spawner = null;
+        this.waveManager = null;
+        this.uiManager = null;
+        this.collisionManager = null;
+        
+        this.start(ResourceLoader).then(() => this.startGame());
     }
 
     startGame() {
-        console.log("start de game!")
-        this.player = new Player() // Assign to class property
-        this.add(this.player)
+        console.log("Starting the game!");
+        
+        // Initialize systems
+        this.initializePlayer();
+        this.initializeSpawner();
+        this.initializeUI();
+        this.initializeCollisions();
+        this.setupCamera();
+        
+        // Start the game
+        this.spawnInitialZombies();
+    }
 
-        // Lock camera to player
-        this.currentScene.camera.strategy.lockToActor(this.player) // Use this.player
+    initializePlayer() {
+        this.player = new Player();
+        this.add(this.player);
+        console.log("Player initialized and added to game");
+    }
 
-        // Initialize and display the timer
-        this.timerLabel = new Label({
-            text: this.formatTime(this.gameTimeRemaining),
-            pos: new Vector(this.drawWidth - 20, 20), // Position from top-right edge (20px right padding, 20px top padding)
-            font: new Font({
-                family: 'Arial',
-                size: 32,
-                color: Color.White,
-                textAlign: TextAlign.Right // Ensure text is right-aligned
-            }),
-            anchor: new Vector(1, 0), // Anchor to the top-right of the label itself
-            coordPlane: CoordPlane.Screen, // Set coordinate plane to screen for UI
-            zIndex: 99 // Ensure timer is drawn on top
+    initializeSpawner() {
+        this.spawner = new ZombieSpawner(this);
+        this.waveManager = new ZombieWaveManager(this.spawner, this.uiManager);
+        
+        // Configure waves (optional - voor later gebruik)
+        this.waveManager.addWave({
+            enemies: [
+                { type: 'slow', count: 5, startX: 200, startY: 300 },
+                { type: 'fast', count: 3, startX: 800, startY: 300 }
+            ],
+            delay: 0,
+            message: "Wave 1: Warm-up"
         });
-        this.add(this.timerLabel);
-        console.log("Timer label added with zIndex and adjusted position.");
+        
+        this.waveManager.addWave({
+            enemies: [
+                { type: 'slow', count: 8, startX: 200, startY: 200 },
+                { type: 'fast', count: 5, startX: 900, startY: 400 }
+            ],
+            delay: 30000, // 30 seconds after wave 1
+            message: "Wave 2: Getting Serious"
+        });
+        
+        console.log("Spawner and wave manager initialized");
+    }    initializeUI() {
+        this.uiManager = new UIManager(this);
+        this.uiManager.createTimer(this.gameTimeRemaining);
+        this.uiManager.createAmmoCounter();
+        this.uiManager.createReloadIndicator();
+        this.uiManager.createHealthCounter(this.player.currentHealth, this.player.maxHealth);
+        this.uiManager.createScoreCounter();
+        
+        // Connect UI to player weapon system
+        if (this.player && this.player.weapon) {
+            this.player.weapon.setUIManager(this.uiManager);
+        }
+        
+        console.log("UI initialized");
+    }initializeCollisions() {
+        this.collisionManager = new CollisionManager(this, this);
+        this.collisionManager.setupCollisions();
+        console.log("Collision manager initialized and global collisions setup");
+    }
 
-        // Spawn 10 slow zombies
-        for (let i = 0; i < 10; i++) {
-            const slowZombie = new SlowZombie()
-            // Verspreid ze een beetje over het scherm
-            slowZombie.pos = new Vector(200 + i * 60, 300 + Math.random() * 200 - 100)
-            this.add(slowZombie)
-            console.log(`SlowZombie ${i} toegevoegd op positie (${slowZombie.pos.x}, ${slowZombie.pos.y})`)
-        }
-        // Spawn 10 fast zombies
-        for (let i = 0; i < 10; i++) {
-            const fastZombie = new FastZombie()
-            fastZombie.pos = new Vector(800 + i * 60, 300 + Math.random() * 200 - 100)
-            this.add(fastZombie)
-            console.log(`FastZombie ${i} toegevoegd op positie (${fastZombie.pos.x}, ${fastZombie.pos.y})`)
-        }
+    setupCamera() {
+        this.currentScene.camera.strategy.lockToActor(this.player);
+        console.log("Camera locked to player");
+    }
+
+    spawnInitialZombies() {
+        // Spawn initial zombies using the spawner
+        this.spawner.addSpawnConfig({
+            type: 'slow',
+            count: 10,
+            startX: 200,
+            startY: 300,
+            spreadX: 60,
+            spreadY: 200
+        });
+        
+        this.spawner.addSpawnConfig({
+            type: 'fast',
+            count: 10,
+            startX: 800,
+            startY: 300,
+            spreadX: 60,
+            spreadY: 200
+        });
+        
+        this.spawner.spawnAll();
+        console.log("Initial zombies spawned");
+        
+        // Optionally start wave system instead
+        // this.waveManager.startWaves();
     }
 
     onPreUpdate(engine, delta) {
-        super.onPreUpdate(engine, delta); // Call super method
+        super.onPreUpdate(engine, delta);
 
-        if (this.isGameOver) {
-            return; // Stop updates if game is over
-        }
+        if (this.isGameOver) return;
 
         // Update game timer
+        this.updateGameTimer(delta);
+        
+        // Update camera rotation
+        this.updateCamera();
+        
+        // Update UI
+        this.updateUI();
+    }
+
+    updateGameTimer(delta) {
         this.gameTimeRemaining -= delta / 1000;
+        
         if (this.gameTimeRemaining <= 0) {
             this.gameTimeRemaining = 0;
-            this.isGameOver = true;
-            console.log("Game Over!");
-            // Potentially add game over screen or logic here
-            this.timerLabel.text = "Game Over!";
-        } else {
-            this.timerLabel.text = this.formatTime(this.gameTimeRemaining);
+            this.endGame();
         }
+    }
 
+    updateCamera() {
         if (this.player) {
-            // Stel camera rotatie in op de negatieve waarde van de spelerrotatie
-            // plus een correctie van 90 graden (PI/2 radialen) zodat de speler naar boven kijkt,
-            // en draai 180 graden (PI radialen) extra.
+            // Camera rotation follows player with 180 degree offset
             this.currentScene.camera.rotation = -this.player.rotation + Math.PI / 2 + Math.PI;
         }
     }
 
-    formatTime(seconds) {
-        const minutes = Math.floor(seconds / 60);
-        const remainingSeconds = Math.floor(seconds % 60);
-        const formattedSeconds = remainingSeconds < 10 ? '0' + remainingSeconds : remainingSeconds;
-        return `Time: ${minutes}:${formattedSeconds}`;
+    updateUI() {
+        // Update timer
+        this.uiManager.updateTimer(this.gameTimeRemaining);
+        
+        // Update ammo counter if player weapon exists
+        if (this.player?.weapon) {
+            const currentAmmo = this.player.weapon.maxBullets - this.player.weapon.bulletsFired;
+            this.uiManager.updateAmmo(currentAmmo, this.player.weapon.maxBullets);
+            this.uiManager.showReloadIndicator(this.player.weapon.reloading);
+        }
+    }
+
+    endGame() {
+        this.isGameOver = true;
+        console.log("Game Over!");
+        this.uiManager.createGameOverScreen();
+        
+        // Stop any ongoing waves
+        if (this.waveManager) {
+            this.waveManager.stopWaves();
+        }
+    }
+
+    // Helper method to spawn zombies during gameplay
+    spawnZombieAt(type, x, y) {
+        return this.spawner.spawnZombieAt(type, x, y);
+    }
+
+    // Method to start wave-based gameplay
+    startWaveMode() {
+        this.waveManager.startWaves();
+    }
+
+    // Helper method to get current game statistics
+    getGameStats() {
+        return {
+            timeRemaining: this.gameTimeRemaining,
+            playerHealth: this.player?.currentHealth || 0,
+            playerMaxHealth: this.player?.maxHealth || 100,
+            score: this.collisionManager?.getScore() || 0,
+            currentWave: this.waveManager?.getCurrentWave() || 0,
+            totalWaves: this.waveManager?.getTotalWaves() || 0
+        };
+    }
+
+    // Debug method to spawn test zombies
+    spawnTestZombies() {
+        console.log("Spawning test zombies for collision testing...");
+        this.spawner.spawnZombieAt('slow', 200, 150);
+        this.spawner.spawnZombieAt('fast', 250, 150);
+        console.log("Test zombies spawned near player");
     }
 }
 
-new Game()
+// Start the game
+new Game();

@@ -12,7 +12,8 @@ const Resources = {
     FastZombie4: new ImageSource('images/fastZombie4.png'),
     // New slow zombies
     SlowZombie1: new ImageSource('images/slowZombie1.png'),
-    SlowZombie2: new ImageSource('images/slowZombie2.png')
+    SlowZombie2: new ImageSource('images/slowZombie2.png'),
+    Background: new ImageSource('images/background.png')
 }
 
 const ResourceLoader = new Loader()

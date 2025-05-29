@@ -1,7 +1,7 @@
 import { Zombie } from "./zombie.js"
 import { Vector, Color, CollisionType } from "excalibur"
 import { Resources } from "./resources.js"
-import { Player } from "./player.js";
+import { Player } from "./player/player.js";
 
 export class FastZombie extends Zombie {
     constructor() {
@@ -10,6 +10,10 @@ export class FastZombie extends Zombie {
             height: 24,
             collisionType: CollisionType.Active // Make zombie collidable
         })
+        
+        // Zombie properties
+        this.damage = 25; // Fast zombies deal more damage
+
         // Kies random sprite
         const fastSprites = [
             Resources.FastZombie1,
@@ -25,16 +29,8 @@ export class FastZombie extends Zombie {
         this.pos = new Vector(800, 300)
         this.vel = new Vector(-15, 0)
         console.log(`FastZombie constructor voltooid. Sprite index: ${spriteIndex}, scale: 0.5`)
-    }
-
-    onInitialize(engine) {
+    }    onInitialize(engine) {
         super.onInitialize(engine); // Call base class onInitialize
-        this.on('collisionstart', (event) => {
-            if (event.other instanceof Player) {
-                console.log('FastZombie RAAKT SPELER! (Gedetecteerd door FastZombie)');
-                // event.other.takeHit(); 
-            }
-        });
-        console.log("FastZombie collision logic initialized!");
+        console.log("FastZombie initialized!");
     }
 }
