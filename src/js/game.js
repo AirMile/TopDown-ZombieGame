@@ -2,10 +2,10 @@ import '../css/style.css';
 import { Engine, DisplayMode } from "excalibur";
 import { ResourceLoader } from './resources.js';
 import { Player } from './player/player.js';
-import { ZombieSpawner } from './zombiespawner.js';
-import { ZombieWaveManager } from './zombiewave.js';
-import { UIManager } from './uimanager.js';
-import { CollisionManager } from './collisionmanager.js';
+import { ZombieSpawner } from './zombies/zombiespawner.js';
+import { ZombieWaveManager } from './zombies/zombiewave.js';
+import { UIManager } from './ui/uimanager.js';
+import { CollisionManager } from './systems/collisionmanager.js';
 
 export class Game extends Engine {
     constructor() {
