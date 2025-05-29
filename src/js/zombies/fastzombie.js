@@ -2,15 +2,15 @@ import { Zombie } from "./zombie.js"
 import { Vector, Color, CollisionType } from "excalibur"
 import { Resources } from "../resources.js"
 import { Player } from "../player/player.js";
+import { Bullet } from "../weapons/bullet.js";
 
-export class FastZombie extends Zombie {
-    constructor() {
+export class FastZombie extends Zombie {    constructor() {
         super({
             width: 24, // even smaller for better scaling
             height: 24,
             collisionType: CollisionType.Active // Make zombie collidable
         });
-        
+        this.movementSpeed = 100; // Langzame zombies bewegen langzamer
         // Zombie properties
         this.damage = 25; // Fast zombies deal more damage
         this.maxHealth = 10; // Fast zombies have 10 health
@@ -32,8 +32,20 @@ export class FastZombie extends Zombie {
         this.pos = new Vector(800, 300)
         this.vel = new Vector(-15, 0)
     }
-    
-    onInitialize(engine) {
+      onInitialize(engine) {
         super.onInitialize(engine); // Call base class onInitialize
+          // Listen for collisions with bullets
+        this.on('collisionstart', (event) => {
+            // Get the actual actor from the collider
+            const otherActor = event.other.owner;
+            
+            if (otherActor instanceof Bullet) {
+                // Take damage
+                this.takeDamage(10);
+                
+                // Kill the bullet
+                otherActor.kill();
+            }
+        });
     }
 }
