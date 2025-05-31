@@ -1,7 +1,8 @@
 import { Vector } from "excalibur";
+import { PlayerConfig } from "../config/playerconfig.js";
 
 export class PlayerMovement {
-    baseSpeed = 150;
+    baseSpeed = PlayerConfig.BASE_SPEED;
 
     constructor(player) {
         this.player = player;

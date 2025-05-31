@@ -2,21 +2,24 @@ import { Vector } from "excalibur";
 import { SlowZombie } from "./slowzombie.js";
 import { FastZombie } from "./fastzombie.js";
 import { Player } from "../player/player.js";
+import { SpawnerConfig } from "../config/spawnerconfig.js";
 
 export class ZombieSpawner {
     constructor(engine) {
         this.engine = engine;
-          // Continuous spawning configuration (veel agressiever gemaakt)
-        this.spawnInterval = 1500; // Start waarde: 1.5 seconden (was 2 seconden)
-        this.minSpawnInterval = 300; // Minimale spawn interval (was 500ms)
-        this.difficulty = 1; // Start moeilijkheidsgraad
-        this.difficultyIncreaseRate = 0.15; // Snellere moeilijkheidsverhoging (was 0.1)
-        this.spawnDistanceFromScreen = 100;
-        this.fastZombieChance = 0.3; // 30% kans op fast zombie (was 20%)
-          // Timer systeem (snellere progressie)
+        
+        // Continuous spawning configuration (veel agressiever gemaakt)
+        this.spawnInterval = SpawnerConfig.INITIAL_SPAWN_INTERVAL; // Start waarde
+        this.minSpawnInterval = SpawnerConfig.MIN_SPAWN_INTERVAL; // Minimale spawn interval
+        this.difficulty = SpawnerConfig.DIFFICULTY.STARTING_DIFFICULTY; // Start moeilijkheidsgraad
+        this.difficultyIncreaseRate = SpawnerConfig.DIFFICULTY.INCREASE_RATE; // Snellere moeilijkheidsverhoging
+        this.spawnDistanceFromScreen = SpawnerConfig.SPAWN_DISTANCE_FROM_SCREEN;
+        this.fastZombieChance = SpawnerConfig.FAST_ZOMBIE_CHANCE.INITIAL; // Kans op fast zombie
+        
+        // Timer systeem (snellere progressie)
         this.spawnTimer = 0;
         this.difficultyTimer = 0;
-        this.difficultyIncreaseInterval = 7000; // 7 seconden (was 10 seconden)
+        this.difficultyIncreaseInterval = SpawnerConfig.DIFFICULTY.INCREASE_INTERVAL; // Hoe vaak difficulty stijgt
         
         // Status
         this.isActive = false;
@@ -52,25 +55,28 @@ export class ZombieSpawner {
         this.difficulty += this.difficultyIncreaseRate;
         
         // Bereken nieuwe spawn interval (sneller dan voorheen)
-        this.spawnInterval = Math.max(this.minSpawnInterval, 1500 / this.difficulty);
+        this.spawnInterval = Math.max(this.minSpawnInterval, SpawnerConfig.INITIAL_SPAWN_INTERVAL / this.difficulty);
         
         // Update fast zombie kans (sneller stijgend)
-        this.fastZombieChance = Math.min(0.85, 0.3 + (this.difficulty - 1) * 0.12);
-        
+        this.fastZombieChance = Math.min(
+            SpawnerConfig.FAST_ZOMBIE_CHANCE.MAX, 
+            SpawnerConfig.FAST_ZOMBIE_CHANCE.INITIAL + (this.difficulty - 1) * SpawnerConfig.FAST_ZOMBIE_CHANCE.INCREASE_RATE
+        );
     }
 
     spawnZombieWave() {
         const player = this.findPlayer();
         if (!player) {
             return;
-        }        // Bereken aantal zombies voor deze wave (meer agressief)
-        const baseZombies = 1 + Math.floor((this.difficulty - 1) * 1.2); // Meer zombies per difficulty level
-        const totalZombies = Math.min(6, baseZombies); // Cap op 6 zombies per wave
+        }
+
+        // Bereken aantal zombies voor deze wave (meer agressief)
+        const baseZombies = 1 + Math.floor((this.difficulty - 1) * SpawnerConfig.DIFFICULTY.BASE_ZOMBIES_MULTIPLIER);
+        const totalZombies = Math.min(SpawnerConfig.DIFFICULTY.MAX_ZOMBIES_PER_WAVE, baseZombies);
         
         // Kies random spawn patroon
         const patterns = ['single', 'line', 'circle', 'cluster'];
         const selectedPattern = patterns[Math.floor(Math.random() * patterns.length)];
-        
         
         // Spawn zombies volgens het gekozen patroon
         this.spawnPattern(selectedPattern, totalZombies, player);
@@ -157,7 +163,7 @@ export class ZombieSpawner {
     }
 
     spawnLinePattern(basePosition, count) {
-        const spacing = 40; // 40px spacing tussen zombies
+        const spacing = SpawnerConfig.SPAWN_PATTERNS.LINE_SPACING; // spacing tussen zombies
         const startOffset = -(count - 1) * spacing / 2;
         
         for (let i = 0; i < count; i++) {
@@ -169,7 +175,7 @@ export class ZombieSpawner {
     }
 
     spawnCirclePattern(basePosition, count) {
-        const radius = 60; // 60px radius
+        const radius = SpawnerConfig.SPAWN_PATTERNS.CIRCLE_RADIUS; // radius
         
         for (let i = 0; i < count; i++) {
             const angle = (i / count) * 2 * Math.PI;
@@ -182,7 +188,7 @@ export class ZombieSpawner {
     }
 
     spawnClusterPattern(basePosition, count) {
-        const maxSpread = 80; // 80px max spread
+        const maxSpread = SpawnerConfig.SPAWN_PATTERNS.CLUSTER_MAX_SPREAD; // max spread
         
         for (let i = 0; i < count; i++) {
             const randomX = basePosition.x + (Math.random() - 0.5) * maxSpread;

@@ -1,101 +1,72 @@
 import { Zombie } from "./zombie.js";
-import { Vector, Color, CollisionType, Shape, vec } from "excalibur"
-import { Resources } from "../resources.js"
-import { Player } from "../player/player.js";
-import { Bullet } from "../weapons/bullet.js";
+import { Vector, Color, CollisionType, Shape } from "excalibur";
+import { Resources } from "../resources.js";
+import { ZombieConfig } from "../config/zombieconfig.js";
 
 export class SlowZombie extends Zombie {    
     constructor() {
         super({
-            width: 24, // even smaller for better scaling
-            height: 24,
-            collisionType: CollisionType.Active // Make zombie collidable
-        });        
+            width: ZombieConfig.BASE_WIDTH,
+            height: ZombieConfig.BASE_HEIGHT,
+            collisionType: CollisionType.Active
+        });
 
-        // Zombie properties
-        this.damage = 15; // Slow zombies deal moderate damage
-        this.maxHealth = 30; // Slow zombies have 30 health
-        this.health = this.maxHealth;        // Damage cooldown system
-        this.damageTimer = 0; // Timer voor damage cooldown
-        this.damageCooldown = 500; // 0.5 seconds in milliseconds
-        this.initializationDelay = 1000; // 1 second delay before damage can be applied        // Kies random sprite
-        const slowSprites = [
-            Resources.SlowZombie1,
-            Resources.SlowZombie2
-        ];        const spriteIndex = Math.floor(Math.random() * slowSprites.length);
-        const sprite = slowSprites[spriteIndex].toSprite();
-        sprite.scale = new Vector(0.5, 0.5); // Scale sprite to 50%        sprite.tint = Color.fromRGB(100, 200, 255); // Lichtblauw tint op sprite zelf!
-        this.graphics.use(sprite);
-        this.pos = new Vector(500, 300) // Moved further away from player
-    }onPreUpdate(engine, delta) {
-        super.onPreUpdate(engine, delta);
+        // Slow zombie specific properties
+        this.damage = ZombieConfig.SLOW_ZOMBIE.DAMAGE;
+        this.maxHealth = ZombieConfig.SLOW_ZOMBIE.MAX_HEALTH;
+        this.health = this.maxHealth;
+        this.movementSpeed = ZombieConfig.SLOW_ZOMBIE.MOVEMENT_SPEED;
         
-        // Update initialization delay
-        if (this.initializationDelay > 0) {
-            this.initializationDelay -= delta;
-        }
+        // Initialize subsystems with slow zombie values
+        this.initializeSubsystems(this.damage, this.movementSpeed);
         
-        // Update damage timer
-        if (this.damageTimer > 0) {
-            this.damageTimer -= delta;
-        }
+        // Setup graphics using graphics system
+        this.graphicsSystem.setupSlowZombieSprite(
+            ZombieConfig.SLOW_ZOMBIE.SPRITE_SCALE,
+            ZombieConfig.SLOW_ZOMBIE.TINT_COLOR
+        );
         
-        // Log rotatie voor debug (elke 60 frames = ongeveer 1x per seconde)
-        if (Math.random() < 0.016) { // ~1/60 kans per frame
-            const rotationDegrees = (this.rotation * 180 / Math.PI).toFixed(1);
-        }
+        this.pos = new Vector(
+            ZombieConfig.SLOW_ZOMBIE.STARTING_POS.x, 
+            ZombieConfig.SLOW_ZOMBIE.STARTING_POS.y
+        );
         
-        // Only check for collision after initialization delay
-        if (this.initializationDelay <= 0) {
-            this.checkPlayerCollision(engine, delta);
-        } 
+        console.log("SlowZombie created with subsystem architecture");
     }
-      checkPlayerCollision(engine, delta) {
-        // Find player in the scene using the same method as base zombie class
-        const player = engine.currentScene.actors.find(actor => actor instanceof Player);
-        
-        if (!player) return;
-        
-        // Make sure collision bodies are initialized
-        if (!this.collider || !player.collider) return;
-        
-        // Check if zombie and player collision bodies are overlapping
-        const zombieBody = this.collider.bounds;
-        const playerBody = player.collider.bounds;
-        
-        const isCurrentlyColliding = zombieBody.overlaps(playerBody);
-        
-        if (isCurrentlyColliding) {
-            // We are colliding with player
-            if (this.damageTimer <= 0) {
 
-            
-                // Apply damage to player
-                player.takeHit(this.damage);
-                
-                // Reset damage timer
-                this.damageTimer = this.damageCooldown;
-
-            }
+    // Handle player interaction using subsystems
+    handlePlayerInteraction(engine, delta) {
+        // Only handle interaction if damage system is ready
+        if (!this.damageSystem.isReady()) {
+            return;
         }
-    }    onInitialize(engine) {
-        super.onInitialize(engine); // Call base class onInitialize        
         
-        // Vergroot collider naar schouder-breedte (veel breder voor échte schouder-tot-schouder)
-        const colliderWidth = 80;  // Veel breder voor schouder-tot-schouder
-        const colliderHeight = 35; // Ook hoger voor betere coverage
+        // Check for collision with player
+        const collisionResult = this.collisionSystem.checkPlayerCollision(engine);
         
-        // Centreer de collider en zorg dat hij meedraait met rotatie
+        if (collisionResult && collisionResult.isColliding) {
+            // Deal damage to player using damage system
+            this.damageSystem.dealDamageToPlayer(collisionResult.player);
+        }
+    }
+
+    onInitialize(engine) {
+        super.onInitialize(engine);
+        
+        // Setup collision shape
+        const colliderWidth = ZombieConfig.COLLIDER_WIDTH;
+        const colliderHeight = ZombieConfig.COLLIDER_HEIGHT_SLOW;
+        
         const boxShape = Shape.Box(colliderWidth, colliderHeight);
         this.collider.set(boxShape);
         
-        // BELANGRIJK: Schakel rotatie in voor de collider zodat hij meedraait
+        // Enable box collision with rotation support
         this.collider.useBoxCollision = true;
         this.body.useBoxCollision = true;
-          // Extra debug: log de daadwerkelijke collider bounds
-
         
-        // Maak collider zichtbaar voor debug (zodat je kunt zien dat hij meedraait)
-        this.graphics.showDebug = true;
+        // Enable debug graphics using graphics system
+        this.graphicsSystem.showDebug(true);
+        
+        console.log(`SlowZombie initialized: collider=${colliderWidth}x${colliderHeight}`);
     }
 }

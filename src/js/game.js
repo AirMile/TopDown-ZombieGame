@@ -1,36 +1,41 @@
 import '../css/style.css';
-import { Engine, DisplayMode, Keys } from "excalibur";
+import { Engine, DisplayMode } from "excalibur";
 import { ResourceLoader } from './resources.js';
-import { Background } from './background.js';
-import { Player } from './player/player.js';
-import { ZombieSpawner } from './zombies/zombiespawner.js';
 import { UIManager } from './ui/uimanager.js';
 import { CollisionManager } from './systems/collisionmanager.js';
 import { HighScoreManager } from './systems/highscoremanager.js';
+import { GameState } from './systems/gamestate.js';
+import { SceneManager } from './systems/scenemanager.js';
+import { InputManager } from './systems/inputmanager.js';
+import { EntityManager } from './systems/entitymanager.js';
+import { GameConfig } from './config/index.js';
 
 export class Game extends Engine {
     constructor() {
         super({ 
-            width: 1280,
-            height: 720,
-            maxFps: 60,
+            width: GameConfig.SCREEN_WIDTH,
+            height: GameConfig.SCREEN_HEIGHT,
+            maxFps: GameConfig.MAX_FPS,
             displayMode: DisplayMode.FitScreen
         });
-          // Game states
-        this.gameState = 'MENU'; // 'MENU', 'PLAYING', 'GAME_OVER'
-        this.isGameOver = false;
-          // Initialize systems
-        this.player = null;
-        this.spawner = null;
+        
+        // Initialize management systems
+        this.gameState = new GameState();
+        this.sceneManager = new SceneManager(this, this.gameState);
+        this.inputManager = new InputManager(this, this.gameState);
+        this.entityManager = new EntityManager(this, this.gameState, this.sceneManager);
+        
+        // Initialize game systems
         this.uiManager = null;
         this.collisionManager = null;
         this.highScoreManager = new HighScoreManager();
         
+        console.log('Game engine initialized with management systems');
+        
         this.start(ResourceLoader).then(() => this.showMainMenu());
     }
-    
     showMainMenu() {
-        this.gameState = 'MENU';
+        this.gameState.setState('MENU');
         this.clearGame();
         
         // Initialize UI manager for main menu
@@ -38,36 +43,30 @@ export class Game extends Engine {
         this.uiManager.createMainMenu();
         
         // Setup main menu input handlers
-        this.setupMainMenuInput();
-    }
-    
-    setupMainMenuInput() {
-        this.input.keyboard.on('press', (evt) => {
-            if (this.gameState === 'MENU' && evt.key === Keys.Space) {
-                this.startNewGame();
-            }
-        });
+        this.inputManager.setupMainMenuInput(() => this.startNewGame());
+        
+        console.log('Main menu displayed');
     }
     
     startNewGame() {
-        this.gameState = 'PLAYING';
+        this.gameState.setState('PLAYING');
         this.clearGame();
         this.resetGameState();
         this.startGame();
+        
+        console.log('New game started');
     }
-      resetGameState() {
-        this.isGameOver = false;
+    
+    resetGameState() {
+        this.gameState.resetGame();
         
-        // Clear all actors from the scene
-        this.currentScene.clear();
+        // Prepare scene for new game
+        this.sceneManager.prepareForNewGame();
+        
+        console.log('Game state reset');
     }
-      clearGame() {
-        
-        // Remove all actors from current scene
-        if (this.currentScene) {
-            this.currentScene.clear();
-        }
-        
+    
+    clearGame() {
         // Clear UI
         if (this.uiManager) {
             this.uiManager.clearAll();
@@ -78,195 +77,188 @@ export class Game extends Engine {
             this.collisionManager.resetScore();
         }
 
-        // Stop spawner
-        if (this.spawner) {
-            this.spawner.stop();
-        }
-          // Reset references
-        this.player = null;
-        this.spawner = null;
-        this.collisionManager = null;
-        this.background = null;
+        // Clean up all entities
+        this.entityManager.cleanupAllEntities();
+          console.log('Game cleared');
+    }
+
+    startGame() {
+        // Initialize all game entities
+        const entities = this.entityManager.initializeGameEntities();
         
-    }    startGame() {
-        // Initialize background first (behind everything)
-        this.initializeBackground();
-        
-        // Initialize systems
-        this.initializePlayer();
-        this.initializeSpawner();
+        // Initialize game systems
         this.initializeUI();
         this.initializeCollisions();
         this.setupCamera();
+        this.setupGameplayInput();
         
-        // Setup input handlers for gameplay
-        this.setupGameOverInput();
+        // Start spawning
+        this.entityManager.startSpawning();
         
-        // Start the game
-        this.spawnInitialZombies();
-    }initializePlayer() {
-        this.player = new Player();
-        this.add(this.player);
-        
-        // Enable shooting after the delay to prevent immediate shooting when starting with SPACE
-        this.enablePlayerShootingAfterDelay();
+        console.log('Game started with all systems initialized');
     }
 
-    initializeBackground() {
-        // Maak een enorme map van 20000x20000 pixels voor veel ruimte om te bewegen
-        const mapWidth = 20000;
-        const mapHeight = 20000;
+    initializeUI() {
+        const player = this.entityManager.getPlayer();
         
-        
-        this.background = new Background(mapWidth, mapHeight);
-        this.add(this.background);
-        
-    }initializeSpawner() {
-        this.spawner = new ZombieSpawner(this);
-    }    initializeUI() {
         this.uiManager = new UIManager(this);
         this.uiManager.createAmmoCounter();
         this.uiManager.createReloadIndicator();
-        this.uiManager.createHealthCounter(this.player.currentHealth, this.player.maxHealth);
+        this.uiManager.createHealthCounter(player.currentHealth, player.maxHealth);
         this.uiManager.createScoreCounter();
-          // Connect UI to player weapon system
-        if (this.player && this.player.weapon) {
-            this.player.weapon.setUIManager(this.uiManager);
+        
+        // Connect UI to player weapon system
+        if (player && player.weapon) {
+            player.weapon.setUIManager(this.uiManager);
         }
+        
+        console.log('UI initialized');
     }
 
     initializeCollisions() {
         this.collisionManager = new CollisionManager(this, this);
         this.collisionManager.setupCollisions();
-    }
-
-    enablePlayerShootingAfterDelay() {
-        // Enable shooting after a short delay to prevent immediate shooting when starting with SPACE
-        setTimeout(() => {
-            if (this.player) {
-                this.player.shootingEnabled = true;
-            }
-        }, this.player.shootingDelayTime);
+        
+        console.log('Collision system initialized');
     }
 
     setupCamera() {
-        this.currentScene.camera.strategy.lockToActor(this.player);
-    }    spawnInitialZombies() {
-        // Start het continuous spawning systeem
-        this.spawner.start();
+        const player = this.entityManager.getPlayer();
+        this.sceneManager.setupCamera(player);
         
-    }    onPreUpdate(engine, delta) {
+        console.log('Camera setup completed');
+    }
+
+    setupGameplayInput() {
+        // Setup debug input for testing
+        this.inputManager.setupDebugInput({
+            showDebugInfo: () => this.showDebugInfo(),
+            spawnTestZombies: () => this.entityManager.spawnTestZombies(),
+            toggleGodMode: () => this.toggleGodMode(),
+            resetGame: () => this.startNewGame()
+        });
+        
+        // Setup gameplay input (pause, menu, etc.)
+        this.inputManager.setupGameplayInput(
+            () => this.pauseGame(),
+            () => this.showMainMenu()
+        );
+        
+        console.log('Gameplay input setup completed');    }
+
+    onPreUpdate(engine, delta) {
         super.onPreUpdate(engine, delta);
 
         // Only update game logic when actually playing
-        if (this.gameState !== 'PLAYING' || this.isGameOver) {
+        if (!this.gameState.canUpdate()) {
             return;
         }
 
-        // Update spawner
-        if (this.spawner) {
-            this.spawner.update(delta);
-        }
+        // Update entities through entity manager
+        this.entityManager.updateEntities(delta);
 
         // Update camera rotation
         this.updateCamera();
         
         // Update UI
         this.updateUI();
-    }    updateCamera() {
-        if (this.player) {
-            // Camera rotation follows player with 180 degree offset
-            this.currentScene.camera.rotation = -this.player.rotation + Math.PI / 2 + Math.PI;
+    }
+
+    updateCamera() {
+        const player = this.entityManager.getPlayer();
+        if (player) {
+            // Use config for camera rotation offset
+            this.sceneManager.updateCameraRotation(player);
         }
-    }    updateUI() {
-        // Update ammo counter if player weapon exists
-        if (this.player?.weapon) {
-            const currentAmmo = this.player.weapon.getCurrentAmmo();
-            const totalAmmo = this.player.weapon.getTotalAmmo();
-            this.uiManager.updateAmmo(currentAmmo, this.player.weapon.maxBullets, totalAmmo);
-            this.uiManager.showReloadIndicator(this.player.weapon.reloading);
-        }
-    }endGame() {
-        this.gameState = 'GAME_OVER';
-        this.isGameOver = true;
+    }
+
+    updateUI() {
+        const player = this.entityManager.getPlayer();
         
+        // Update ammo counter if player weapon exists
+        if (player?.weapon) {
+            const currentAmmo = player.weapon.getCurrentAmmo();
+            const totalAmmo = player.weapon.getTotalAmmo();
+            this.uiManager.updateAmmo(currentAmmo, player.weapon.maxBullets, totalAmmo);
+            this.uiManager.showReloadIndicator(player.weapon.reloading);
+        }
+    }
+
+    endGame() {
+        this.gameState.setGameOver(true);
         
         const finalScore = this.collisionManager.getScore();
         
-        // Check en update high score
+        // Check and update high score
         const isNewHighScore = this.highScoreManager.checkAndUpdateHighScore(finalScore);
         
-
-        // Stop spawner
-        if (this.spawner) {
-            this.spawner.stop();
-        }
+        // Stop spawning
+        this.entityManager.stopSpawning();
         
-        // Kill all entities including player
-        this.killAllEntities();
+        // Kill all entities for dramatic effect
+        this.sceneManager.prepareForGameOver();
         
-        // Create game over screen met high score info
+        // Create game over screen with high score info
         this.uiManager.createGameOverScreen(finalScore, this.highScoreManager.getHighScore(), isNewHighScore);
         
         // Setup game over input handlers
-        this.setupGameOverInput();
+        this.inputManager.setupGameOverInput(
+            () => this.startNewGame(),
+            () => this.showMainMenu()
+        );
         
-    }
-    
-    killAllEntities() {
-        
-        // Get all actors in the current scene
-        const allActors = this.currentScene.actors;
-        const entityCount = allActors.length;
-        
-        
-        // Kill all actors (including player, zombies, bullets)
-        allActors.forEach(actor => {
-            if (actor && typeof actor.kill === 'function') {
-                actor.kill();
-            }
-        });
-        
-        // Clear the scene completely
-        this.currentScene.clear();
-        
-    }    setupGameOverInput() {
-        // Remove existing input handlers to avoid conflicts
-        this.input.keyboard.off('press');
-          this.input.keyboard.on('press', (evt) => {
-            if (this.gameState === 'GAME_OVER') {
-                if (evt.key === Keys.Space) {
-                    // Restart game
-                    this.startNewGame();
-                } else if (evt.key === Keys.Escape) {
-                    // Return to main menu
-                    this.showMainMenu();
-                }
-            }
-        });
+        console.log(`Game ended - Final score: ${finalScore}, New high score: ${isNewHighScore}`);
     }
 
-    // Helper method to spawn zombies during gameplay
+    // Helper methods for entity management
     spawnZombieAt(type, x, y) {
-        return this.spawner.spawnZombieAt(type, x, y);
+        return this.entityManager.spawnZombieAt(type, x, y);
     }
 
-    // Method to start wave-based gameplay
     startWaveMode() {
-        this.spawner.start();
-    }    // Helper method to get current game statistics
+        this.entityManager.startSpawning();
+    }
+
+    // Get current game statistics
     getGameStats() {
+        const player = this.entityManager.getPlayer();
+        const spawner = this.entityManager.getSpawner();
+        
         return {
-            playerHealth: this.player?.currentHealth || 0,
-            playerMaxHealth: this.player?.maxHealth || 100,
+            playerHealth: player?.currentHealth || 0,
+            playerMaxHealth: player?.maxHealth || 100,
             score: this.collisionManager?.getScore() || 0,
-            difficulty: this.spawner?.difficulty || 1,
-            spawnInterval: this.spawner?.spawnInterval || 2000
+            difficulty: spawner?.difficulty || 1,
+            spawnInterval: spawner?.spawnInterval || 2000,
+            gameState: this.gameState.getState(),
+            entityCounts: this.entityManager.getEntityCounts()
         };
-    }// Debug method to spawn test zombies
-    spawnTestZombies() {
-        this.spawner.spawnZombieAt('slow', 200, 150);
-        this.spawner.spawnZombieAt('fast', 250, 150);
+    }
+
+    // Debug methods
+    showDebugInfo() {
+        const stats = this.getGameStats();
+        const gameStateInfo = this.gameState.getDebugInfo();
+        const entityInfo = this.entityManager.getTrackedEntities();
+        
+        console.log('=== DEBUG INFO ===');
+        console.log('Game Stats:', stats);
+        console.log('Game State:', gameStateInfo);
+        console.log('Entities:', entityInfo);
+        console.log('==================');
+    }
+
+    toggleGodMode() {
+        const player = this.entityManager.getPlayer();
+        if (player) {
+            player.godMode = !player.godMode;
+            console.log('God mode:', player.godMode ? 'ENABLED' : 'DISABLED');
+        }
+    }
+
+    pauseGame() {
+        // TODO: Implement pause functionality
+        console.log('Pause requested (not yet implemented)');
     }
 }
 

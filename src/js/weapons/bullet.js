@@ -1,11 +1,12 @@
 import { Actor, Vector, Color, CollisionType } from "excalibur";
 import { SlowZombie } from "../zombies/slowzombie.js";
 import { FastZombie } from "../zombies/fastzombie.js";
+import { WeaponConfig } from "../config/weaponconfig.js";
 
 export class Bullet extends Actor {
     startPos;
-    range = 800;
-    lifetime = 5000;    constructor(x, y, richting) {
+    range = WeaponConfig.BULLET.RANGE;
+    lifetime = WeaponConfig.BULLET.LIFETIME;    constructor(x, y, richting) {
         super({ 
             x, 
             y, 
@@ -26,14 +27,14 @@ export class Bullet extends Actor {
             const otherActor = event.other.owner;            if (otherActor instanceof SlowZombie || otherActor instanceof FastZombie) {
                 // Bereken knockback richting op basis van bullet naar zombie positie
                 // Dit is betrouwbaarder dan bullet velocity omdat het altijd correct is
-                const bulletToZombie = otherActor.pos.sub(this.pos).normalize();
+                const bulletToZombie = otherActor.pos.sub(this.pos).normalize(); // Use Vector.normalize()
                 
                 // Debug: bereken ook bullet velocity richting voor vergelijking
-                const bulletDirection = this.vel.normalize();
+                const bulletDirection = this.vel.normalize(); // Use Vector.normalize()
                 
                 // Gebruik bullet-naar-zombie richting voor knockback
                 const knockbackDirection = bulletToZombie;
-                const knockbackStrength = 80; // Pas deze waarde aan voor meer/minder knockback
+                const knockbackStrength = WeaponConfig.BULLET.KNOCKBACK_STRENGTH;
                 
                 // Debug: log alle relevante waarden
                 console.log(`Bullet collision debug:`);
@@ -47,7 +48,7 @@ export class Bullet extends Actor {
                 otherActor.applyKnockback(knockbackDirection, knockbackStrength);
                 
                 // Deal damage
-                otherActor.takeDamage(10);
+                otherActor.takeDamage(WeaponConfig.BULLET.DAMAGE);
                 
                 // Kill this bullet
                 this.kill();
