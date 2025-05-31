@@ -15,7 +15,6 @@ export class PlayerWeapon {
     constructor(player, uiManager = null) {
         this.player = player;
         this.uiManager = uiManager;
-          console.log(`PlayerWeapon initialized: Magazine=${this.maxBullets}, Starting ammo=${this.totalAmmo} (UNLIMITED)`);
         
         // Update initial ammo display
         this.updateAmmoUI();
@@ -27,9 +26,7 @@ export class PlayerWeapon {
         }
     }    canShoot() {
         return !this.reloading && this.fireCooldown <= 0 && this.getCurrentAmmo() > 0;
-    }
-
-    shoot() {
+    }    shoot() {
         if (!this.canShoot()) return;
 
         const direction = Vector.fromAngle(this.player.rotation);
@@ -40,10 +37,12 @@ export class PlayerWeapon {
             this.player.scene.engine.add(bullet);
         }
 
+        // Trigger shooting animation on player
+        this.player.startShootingAnimation();
+
         this.bulletsFired++;
         this.fireCooldown = this.fireRate;
         
-        console.log(`Shot fired: Magazine ammo=${this.getCurrentAmmo()}, Total ammo=${this.totalAmmo}`);
 
         // Update ammo UI
         this.updateAmmoUI();
@@ -51,16 +50,14 @@ export class PlayerWeapon {
         if (this.bulletsFired >= this.maxBullets) {
             this.startReload();
         }
-    }    startReload() {
+    }startReload() {
         // Check of we genoeg totaal ammo hebben voor reload
         if (this.totalAmmo <= 0) {
-            console.log(`❌ Cannot reload: No total ammo remaining (${this.totalAmmo})`);
             return;
         }
         
         this.reloading = true;
         
-        console.log(`🔄 Reload started: Magazine=${this.getCurrentAmmo()}, Total=${this.totalAmmo}`);
         
         // Show reload indicator in UI
         if (this.uiManager) {
@@ -80,7 +77,6 @@ export class PlayerWeapon {
             
             this.reloading = false;
             
-            console.log(`✅ Reload complete: Magazine=${this.getCurrentAmmo()}, Total=${this.totalAmmo}, Bullets reloaded=${bulletsToReload}`);
             
             // Hide reload indicator and update ammo UI
             if (this.uiManager) {
@@ -91,7 +87,6 @@ export class PlayerWeapon {
     }    // Manual reload (can be triggered by R key)
     manualReload() {
         if (!this.reloading && this.bulletsFired > 0 && this.totalAmmo > 0) {
-            console.log(`Manual reload triggered: Current magazine=${this.getCurrentAmmo()}, Total ammo=${this.totalAmmo}`);
             this.startReload();
             return true;
         }
@@ -112,12 +107,6 @@ export class PlayerWeapon {
         this.totalAmmo += amount; // Geen maximum limiet meer!
         const actualAdded = this.totalAmmo - oldTotal;
         
-        console.log(`=== UNLIMITED AMMO ADDED ===`);
-        console.log(`Pickup amount: ${amount}`);
-        console.log(`Total ammo before: ${oldTotal}`);
-        console.log(`Total ammo after: ${this.totalAmmo} (NO LIMIT)`);
-        console.log(`Actually added: ${actualAdded}`);
-        console.log(`=== END AMMO ADD ===\n`);
         
         // Update UI
         this.updateAmmoUI();

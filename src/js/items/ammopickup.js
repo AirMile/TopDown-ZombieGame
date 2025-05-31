@@ -16,7 +16,6 @@ export class AmmoPickup extends Actor {
         this.bobHeight = 5; // Hoogte van bob beweging
         this.startY = y;
         this.bobTimer = 0;
-          console.log(`AmmoPickup created at position: x=${x}, y=${y}, ammo=${this.ammoAmount}`);
     }
 
     onInitialize(engine) {
@@ -25,19 +24,15 @@ export class AmmoPickup extends Actor {
             const otherActor = event.other.owner;
             
             if (otherActor instanceof Player) {
-                console.log(`=== AMMO PICKUP COLLECTED ===`);
-                console.log(`Player collected ammo pickup worth ${this.ammoAmount} bullets`);
                 
                 // Geef ammo aan player
                 if (otherActor.weapon && typeof otherActor.weapon.addAmmo === 'function') {
                     const ammoAdded = otherActor.weapon.addAmmo(this.ammoAmount);
-                    console.log(`Successfully added ${ammoAdded} ammo to player`);
                 } else {
-                    console.log(`❌ Could not add ammo - weapon or addAmmo method not found`);
                 }
                 
                 // Verwijder pickup
-                this.kill();                console.log(`=== AMMO PICKUP CONSUMED ===\n`);
+                this.kill();                
             }
         });
     }    onPreUpdate(engine, delta) {

@@ -22,36 +22,36 @@ export class CollisionManager {
             bullet.kill();
         });        // Player vs Zombie collision
         this.registerHandler('player-zombie', (player, zombie) => {
-            console.log(`=== ZOMBIE-PLAYER COLLISION DETECTED ===`);
-            console.log(`Zombie type: ${zombie.constructor.name}`);
-            console.log(`Zombie damage: ${zombie.damage || 10}`);
-            console.log(`Player health BEFORE hit: ${player.currentHealth}/${player.maxHealth}`);
-            console.log(`Player invulnerable: ${player.isInvulnerable}`);
+
+
+
+
+
             
             if (typeof player.takeHit === 'function') {
                 player.takeHit(zombie.damage || 10);
-                console.log(`Player took ${zombie.damage || 10} damage`);
-                console.log(`Player health AFTER hit: ${player.currentHealth}/${player.maxHealth}`);
+
+
                 
                 if (player.currentHealth <= 0) {
-                    console.log(`💀 PLAYER DIED! Game Over triggered`);
+
                 } else {
-                    console.log(`⚔️ Player survived with ${player.currentHealth} health remaining`);
+
                 }
             } else {
-                console.log(`❌ Player takeHit method not found!`);
+
             }
-            console.log(`=== END ZOMBIE-PLAYER COLLISION ===\n`);
+
         });
         
         // Player vs AmmoPickup collision
         this.registerHandler('player-ammo', (player, pickup) => {
-            console.log(`=== PLAYER-AMMO COLLISION DETECTED ===`);
-            console.log(`Player collected ammo pickup worth ${pickup.ammoAmount} bullets`);
+
+
             
             // AmmoPickup handles the collision in its own onInitialize
             // This handler is just for logging/additional logic if needed
-            console.log(`=== END PLAYER-AMMO COLLISION ===\n`);
+
         });
     }
     

@@ -24,13 +24,10 @@ export class SlowZombie extends Zombie {
             Resources.SlowZombie2
         ];        const spriteIndex = Math.floor(Math.random() * slowSprites.length);
         const sprite = slowSprites[spriteIndex].toSprite();
-        sprite.scale = new Vector(0.5, 0.5); // Scale sprite to 50%
-        sprite.tint = Color.fromRGB(100, 200, 255); // Lichtblauw tint op sprite zelf!
+        sprite.scale = new Vector(0.5, 0.5); // Scale sprite to 50%        sprite.tint = Color.fromRGB(100, 200, 255); // Lichtblauw tint op sprite zelf!
         this.graphics.use(sprite);
         this.pos = new Vector(500, 300) // Moved further away from player
-        
-        console.log(`SlowZombie created at position: x=${this.pos.x}, y=${this.pos.y}`);// this.vel = new Vector(-2, 0) // Verwijderd, snelheid wordt dynamisch berekend in Zombie base class
-    }    onPreUpdate(engine, delta) {
+    }onPreUpdate(engine, delta) {
         super.onPreUpdate(engine, delta);
         
         // Update initialization delay
@@ -46,15 +43,12 @@ export class SlowZombie extends Zombie {
         // Log rotatie voor debug (elke 60 frames = ongeveer 1x per seconde)
         if (Math.random() < 0.016) { // ~1/60 kans per frame
             const rotationDegrees = (this.rotation * 180 / Math.PI).toFixed(1);
-            console.log(`SlowZombie rotatie: ${rotationDegrees}° (collider draait mee!)`);
         }
         
         // Only check for collision after initialization delay
         if (this.initializationDelay <= 0) {
             this.checkPlayerCollision(engine, delta);
-        } else if (this.initializationDelay <= 900) { // Log once when almost ready
-            console.log(`SlowZombie collision detection starting in ${(this.initializationDelay / 1000).toFixed(1)} seconds`);
-        }
+        } 
     }
       checkPlayerCollision(engine, delta) {
         // Find player in the scene using the same method as base zombie class
@@ -74,18 +68,14 @@ export class SlowZombie extends Zombie {
         if (isCurrentlyColliding) {
             // We are colliding with player
             if (this.damageTimer <= 0) {
-                console.log(`=== SLOW ZOMBIE CONTINUOUS DAMAGE ===`);
-                console.log(`SlowZombie position: x=${this.pos.x.toFixed(1)}, y=${this.pos.y.toFixed(1)}`);
-                console.log(`Player position: x=${player.pos.x.toFixed(1)}, y=${player.pos.y.toFixed(1)}`);
-                console.log(`SlowZombie damage dealt: ${this.damage}`);
-                console.log(`Player health before damage: ${player.currentHealth}/${player.maxHealth}`);
-                
+
+            
                 // Apply damage to player
                 player.takeHit(this.damage);
                 
                 // Reset damage timer
                 this.damageTimer = this.damageCooldown;
-                console.log(`=== DAMAGE TIMER RESET TO ${this.damageCooldown}ms ===\n`);
+
             }
         }
     }    onInitialize(engine) {
@@ -102,28 +92,10 @@ export class SlowZombie extends Zombie {
         // BELANGRIJK: Schakel rotatie in voor de collider zodat hij meedraait
         this.collider.useBoxCollision = true;
         this.body.useBoxCollision = true;
-        
-        console.log(`SlowZombie collider ingesteld op ${colliderWidth}x${colliderHeight} (gecentreerd en draait mee)`);
-        
-        // Extra debug: log de daadwerkelijke collider bounds
-        console.log(`SlowZombie collider bounds: width=${this.collider.bounds.width}, height=${this.collider.bounds.height}`);
+          // Extra debug: log de daadwerkelijke collider bounds
+
         
         // Maak collider zichtbaar voor debug (zodat je kunt zien dat hij meedraait)
         this.graphics.showDebug = true;
-        console.log(`SlowZombie collider debug ingeschakeld - collider draait nu echt mee met rotatie!`);
-        
-        // Listen for collisions with bullets
-        this.on('collisionstart', (event) => {
-            // Get the actual actor from the collider
-            const otherActor = event.other.owner;
-            
-            if (otherActor instanceof Bullet) {
-                // Take damage
-                this.takeDamage(10);
-                
-                // Kill the bullet
-                otherActor.kill();
-            }
-        });
     }
 }

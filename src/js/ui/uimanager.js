@@ -221,7 +221,7 @@ export class UIManager {
         // First clear all existing UI elements
         this.clearAll();
         
-        console.log(`Creating game over screen with score: ${finalScore}, high score: ${highScore}, new: ${isNewHighScore}`);
+
         
         // Main game over title
         const gameOverLabel = new Label({
@@ -367,31 +367,28 @@ export class UIManager {
             anchor: new Vector(0.5, 0.5),
             coordPlane: CoordPlane.Screen,
             zIndex: 200
-        });
-          this.engine.add(titleLabel);
+        });        this.engine.add(titleLabel);
         this.engine.add(playLabel);
         this.engine.add(controlsLabel1);
-        this.engine.add(controlsLabel2);
         
         this.elements.set('menuTitle', titleLabel);
         this.elements.set('menuPlay', playLabel);
         this.elements.set('menuControls1', controlsLabel1);
-        this.elements.set('menuControls2', controlsLabel2);
         
         return titleLabel;
     }    // Remove all UI elements
     clearAll() {
-        console.log(`Clearing ${this.elements.size} UI elements...`);
+
         
         this.elements.forEach((element, key) => {
-            console.log(`Removing UI element: ${key}`);
+
             this.engine.remove(element);
         });
         
         this.elements.clear();
         this.healthBarConfig = null; // Reset health bar config
         this.healthFgRect = null; // Reset Rectangle reference
-        console.log(`All UI elements cleared`);
+
     }
 
     // Get UI element by name

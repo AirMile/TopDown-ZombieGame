@@ -62,7 +62,6 @@ export class Game extends Engine {
         this.currentScene.clear();
     }
       clearGame() {
-        console.log(`Clearing game state...`);
         
         // Remove all actors from current scene
         if (this.currentScene) {
@@ -89,7 +88,6 @@ export class Game extends Engine {
         this.collisionManager = null;
         this.background = null;
         
-        console.log(`Game state cleared`);
     }    startGame() {
         // Initialize background first (behind everything)
         this.initializeBackground();
@@ -119,12 +117,10 @@ export class Game extends Engine {
         const mapWidth = 20000;
         const mapHeight = 20000;
         
-        console.log(`Creating massive tiled background: ${mapWidth}x${mapHeight} pixels`);
         
         this.background = new Background(mapWidth, mapHeight);
         this.add(this.background);
         
-        console.log(`Massive background added to game scene`);
     }initializeSpawner() {
         this.spawner = new ZombieSpawner(this);
     }    initializeUI() {
@@ -146,11 +142,9 @@ export class Game extends Engine {
 
     enablePlayerShootingAfterDelay() {
         // Enable shooting after a short delay to prevent immediate shooting when starting with SPACE
-        console.log(`Shooting will be enabled in ${this.player.shootingDelayTime}ms`);
         setTimeout(() => {
             if (this.player) {
                 this.player.shootingEnabled = true;
-                console.log(`✅ Player shooting enabled after delay`);
             }
         }, this.player.shootingDelayTime);
     }
@@ -159,10 +153,8 @@ export class Game extends Engine {
         this.currentScene.camera.strategy.lockToActor(this.player);
     }    spawnInitialZombies() {
         // Start het continuous spawning systeem
-        console.log(`Starting continuous zombie spawning system...`);
         this.spawner.start();
         
-        console.log(`Continuous zombie spawning geactiveerd`);
     }    onPreUpdate(engine, delta) {
         super.onPreUpdate(engine, delta);
 
@@ -198,15 +190,12 @@ export class Game extends Engine {
         this.gameState = 'GAME_OVER';
         this.isGameOver = true;
         
-        console.log(`=== GAME OVER SEQUENCE ===`);
         
         const finalScore = this.collisionManager.getScore();
-        console.log(`Final score: ${finalScore} punten`);
         
         // Check en update high score
         const isNewHighScore = this.highScoreManager.checkAndUpdateHighScore(finalScore);
         
-        console.log(`Killing all entities and clearing scene...`);
 
         // Stop spawner
         if (this.spawner) {
@@ -222,22 +211,18 @@ export class Game extends Engine {
         // Setup game over input handlers
         this.setupGameOverInput();
         
-        console.log(`=== GAME OVER COMPLETE ===\n`);
     }
     
     killAllEntities() {
-        console.log(`Killing all entities in the scene...`);
         
         // Get all actors in the current scene
         const allActors = this.currentScene.actors;
         const entityCount = allActors.length;
         
-        console.log(`Found ${entityCount} entities to remove`);
         
         // Kill all actors (including player, zombies, bullets)
         allActors.forEach(actor => {
             if (actor && typeof actor.kill === 'function') {
-                console.log(`Killing entity: ${actor.constructor.name}`);
                 actor.kill();
             }
         });
@@ -245,7 +230,6 @@ export class Game extends Engine {
         // Clear the scene completely
         this.currentScene.clear();
         
-        console.log(`All entities killed and scene cleared`);
     }    setupGameOverInput() {
         // Remove existing input handlers to avoid conflicts
         this.input.keyboard.off('press');

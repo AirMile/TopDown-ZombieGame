@@ -15,13 +15,32 @@ export class Zombie extends Actor {
         // this.vel = new Vector(-10, 0) // Verwijderd, snelheid wordt dynamisch berekend
         this.maxHealth = 30; // Default health, overschreven in subklassen
         this.health = this.maxHealth;
+        
+        // Knockback system
+        this.isKnockedBack = false;
+        this.knockbackTimer = 0;
+        this.knockbackDuration = 200; // 200ms knockback duration
     }
     
     onInitialize(engine) {
         // Algemene collision logic voor zombies kan hier, of in subclasses.
-    }
-
-    onPreUpdate(engine, delta) {
+    }    onPreUpdate(engine, delta) {
+        // Update knockback timer
+        if (this.isKnockedBack) {
+            this.knockbackTimer -= delta;
+            
+            // Apply friction during knockback
+            const frictionForce = 0.95; // 5% velocity reduction per frame
+            this.vel = this.vel.scale(frictionForce);
+            
+            if (this.knockbackTimer <= 0) {
+                this.isKnockedBack = false;
+                console.log(`Zombie knockback ended: position=${this.pos.x.toFixed(2)},${this.pos.y.toFixed(2)}`);
+            }
+            // During knockback, don't override velocity - let knockback physics work
+            return;
+        }
+        
         // Zoek de speler in de scene
         const player = engine.currentScene.actors.find(actor => actor instanceof Player);
 
@@ -35,7 +54,7 @@ export class Zombie extends Actor {
         } else {
             // Als er geen speler is, stop de zombie (of ander gedrag)
             this.vel = Vector.Zero;        }
-    }    // Method for taking damage from bullets
+    }// Method for taking damage from bullets
     takeDamage(damage) {
         // Prevent damage if already dead
         if (this.health <= 0) {
@@ -45,8 +64,6 @@ export class Zombie extends Actor {
         this.health -= damage;
         
         if (this.health <= 0) {
-            console.log(`=== ZOMBIE KILLED ===`);
-            console.log(`Zombie type: ${this.constructor.name} killed!`);
             
             // Award points based on zombie type
             this.awardKillPoints();
@@ -54,9 +71,21 @@ export class Zombie extends Actor {
             // Drop ammo pickup (25% kans)
             this.dropAmmoPickup();
             
-            console.log(`=== END ZOMBIE KILL ===\n`);
             this.kill();
         }
+    }
+    
+    // Method for applying knockback
+    applyKnockback(direction, strength) {
+        // Start knockback state
+        this.isKnockedBack = true;
+        this.knockbackTimer = this.knockbackDuration;
+        
+        // Apply knockback velocity
+        const knockbackVelocity = direction.scale(strength);
+        this.vel = this.vel.add(knockbackVelocity);
+        
+        console.log(`Zombie knockback applied: direction=${direction.x.toFixed(2)},${direction.y.toFixed(2)}, strength=${strength}, newVel=${this.vel.x.toFixed(2)},${this.vel.y.toFixed(2)}`);
     }
       // Award points when zombie is killed
     awardKillPoints() {
@@ -67,41 +96,25 @@ export class Zombie extends Actor {
             let points = 15; // Beide zombie types geven nu 15 punten
             
             collisionManager.addScore(points);
-            console.log(`Added ${points} points for killing ${this.constructor.name}. Total score: ${collisionManager.getScore()}`);
-        } else {
-            console.log(`❌ Could not award points - collision manager not found`);
-        }
+        } 
     }
       // Drop ammo pickup when zombie is killed
     dropAmmoPickup() {
         // 8% kans om ammo pickup te droppen (meer schaars gemaakt)
-        const dropChance = 0.08;
+        const dropChance = 0.25;
         const randomValue = Math.random();
         
-        console.log(`=== AMMO DROP CHECK ===`);
-        console.log(`Drop chance: ${dropChance * 100}%`);
-        console.log(`Random value: ${randomValue.toFixed(3)}`);
-        
         if (randomValue < dropChance) {
-            console.log(`✅ Ammo pickup will be dropped!`);
             
             // Spawn ammo pickup op zombie positie
             const pickup = new AmmoPickup(this.pos.x, this.pos.y);
             
             if (this.scene?.engine) {
                 this.scene.engine.add(pickup);
-                console.log(`Ammo pickup spawned at x=${this.pos.x.toFixed(1)}, y=${this.pos.y.toFixed(1)}`);
-            } else {
-                console.log(`❌ Could not spawn ammo pickup - no engine reference`);
-            }
-        } else {
-            console.log(`❌ No ammo pickup dropped (${randomValue.toFixed(3)} >= ${dropChance})`);
-        }
+            } 
+        } 
         
-        console.log(`=== END AMMO DROP CHECK ===\n`);
     }
     
-    // kill() { // Implementeer een kill methode als die nog niet bestaat of in Actor zit
-    //     super.kill(); // Roep de kill methode van Actor aan
-    // }
+
 }

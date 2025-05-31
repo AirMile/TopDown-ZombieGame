@@ -6,10 +6,8 @@ export class PlayerMovement {
     constructor(player) {
         this.player = player;
         
-    }
-
-    update(delta) {
-        // No dash mechanics to update anymore
+    }    update(delta) {
+        // Movement update logic
     }
 
     calculateVelocity(speed, strafe) {

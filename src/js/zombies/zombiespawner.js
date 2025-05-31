@@ -20,20 +20,16 @@ export class ZombieSpawner {
         
         // Status
         this.isActive = false;
-        
-        console.log(`ZombieSpawner geïnitialiseerd - startmoeilijkheid: ${this.difficulty}, startinterval: ${this.spawnInterval}ms`);
     }
 
     start() {
         this.isActive = true;
         this.spawnTimer = 0;
         this.difficultyTimer = 0;
-        console.log(`Continuous zombie spawning gestart!`);
     }
 
     stop() {
         this.isActive = false;
-        console.log(`Continuous zombie spawning gestopt!`);
     }
 
     update(delta) {
@@ -61,15 +57,11 @@ export class ZombieSpawner {
         // Update fast zombie kans (sneller stijgend)
         this.fastZombieChance = Math.min(0.85, 0.3 + (this.difficulty - 1) * 0.12);
         
-        console.log(`Moeilijkheidsgraad verhoogd naar ${this.difficulty.toFixed(1)}`);
-        console.log(`Nieuwe spawn interval: ${this.spawnInterval.toFixed(0)}ms`);
-        console.log(`Fast zombie kans: ${(this.fastZombieChance * 100).toFixed(0)}%`);
     }
 
     spawnZombieWave() {
         const player = this.findPlayer();
         if (!player) {
-            console.log(`Geen speler gevonden - wave skip`);
             return;
         }        // Bereken aantal zombies voor deze wave (meer agressief)
         const baseZombies = 1 + Math.floor((this.difficulty - 1) * 1.2); // Meer zombies per difficulty level
@@ -79,7 +71,6 @@ export class ZombieSpawner {
         const patterns = ['single', 'line', 'circle', 'cluster'];
         const selectedPattern = patterns[Math.floor(Math.random() * patterns.length)];
         
-        console.log(`Spawning ${totalZombies} zombies met ${selectedPattern} patroon`);
         
         // Spawn zombies volgens het gekozen patroon
         this.spawnPattern(selectedPattern, totalZombies, player);
@@ -207,7 +198,6 @@ export class ZombieSpawner {
         zombie.pos = position;
         this.engine.add(zombie);
         
-        console.log(`${type} zombie gespawnd op positie (${position.x.toFixed(0)}, ${position.y.toFixed(0)})`);
     }
 
     // Factory method voor het maken van zombies (behouden voor compatibiliteit)
@@ -218,7 +208,6 @@ export class ZombieSpawner {
             case 'fast':
                 return new FastZombie();
             default:
-                console.error(`Onbekend zombie type: ${type}`);
                 return new SlowZombie();
         }
     }

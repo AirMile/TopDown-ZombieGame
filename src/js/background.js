@@ -13,11 +13,11 @@ export class Background extends Actor {
         this.mapWidth = mapWidth;
         this.mapHeight = mapHeight;
         
-        console.log(`Background created: ${mapWidth}x${mapHeight} pixels`);
+
     }
 
     onInitialize(engine) {
-        console.log('Background initialized, creating tiled background with individual actors...');
+
         this.createTiledBackground(engine);
     }
 
@@ -26,14 +26,13 @@ export class Background extends Actor {
         const backgroundSprite = Resources.Background.toSprite();
         
         if (!backgroundSprite) {
-            console.error('❌ Background sprite not available');
             return;
         }
 
         // Gebruik linksboven als anchor voor tegelen
         backgroundSprite.anchor = new Vector(0, 0);
 
-        console.log(`Background sprite dimensions: ${backgroundSprite.width}x${backgroundSprite.height}`);
+
 
         const tileW = backgroundSprite.width;
         const tileH = backgroundSprite.height;
@@ -42,7 +41,7 @@ export class Background extends Actor {
         const tilesX = Math.ceil(this.mapWidth / tileW);
         const tilesY = Math.ceil(this.mapHeight / tileH);
 
-        console.log(`Creating ${tilesX}x${tilesY} = ${tilesX * tilesY} background tiles as individual actors`);
+
 
         let tilesCreated = 0;
 
@@ -74,6 +73,6 @@ export class Background extends Actor {
         }
 
         // Zet deze container actor zelf onzichtbaar (we gebruiken alleen de tiles)
-        this.graphics.visible = false;        console.log(`✅ Background tiling completed with ${tilesCreated} individual tile actors`);
+        this.graphics.visible = false;
     }
 }
