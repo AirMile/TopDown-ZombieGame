@@ -6,19 +6,17 @@ import { Player } from "../player/player.js";
 export class ZombieSpawner {
     constructor(engine) {
         this.engine = engine;
-        
-        // Continuous spawning configuration
-        this.spawnInterval = 2000; // Start waarde: 2 seconden
-        this.minSpawnInterval = 500; // Minimale spawn interval
+          // Continuous spawning configuration (veel agressiever gemaakt)
+        this.spawnInterval = 1500; // Start waarde: 1.5 seconden (was 2 seconden)
+        this.minSpawnInterval = 300; // Minimale spawn interval (was 500ms)
         this.difficulty = 1; // Start moeilijkheidsgraad
-        this.difficultyIncreaseRate = 0.1;
+        this.difficultyIncreaseRate = 0.15; // Snellere moeilijkheidsverhoging (was 0.1)
         this.spawnDistanceFromScreen = 100;
-        this.fastZombieChance = 0.2; // 20% kans op fast zombie
-        
-        // Timer systeem
+        this.fastZombieChance = 0.3; // 30% kans op fast zombie (was 20%)
+          // Timer systeem (snellere progressie)
         this.spawnTimer = 0;
         this.difficultyTimer = 0;
-        this.difficultyIncreaseInterval = 10000; // 10 seconden
+        this.difficultyIncreaseInterval = 7000; // 7 seconden (was 10 seconden)
         
         // Status
         this.isActive = false;
@@ -54,16 +52,14 @@ export class ZombieSpawner {
             this.spawnZombieWave();
             this.spawnTimer = 0;
         }
-    }
-
-    increaseDifficulty() {
+    }    increaseDifficulty() {
         this.difficulty += this.difficultyIncreaseRate;
         
-        // Bereken nieuwe spawn interval
-        this.spawnInterval = Math.max(this.minSpawnInterval, 2000 / this.difficulty);
+        // Bereken nieuwe spawn interval (sneller dan voorheen)
+        this.spawnInterval = Math.max(this.minSpawnInterval, 1500 / this.difficulty);
         
-        // Update fast zombie kans
-        this.fastZombieChance = Math.min(0.8, 0.2 + (this.difficulty - 1) * 0.1);
+        // Update fast zombie kans (sneller stijgend)
+        this.fastZombieChance = Math.min(0.85, 0.3 + (this.difficulty - 1) * 0.12);
         
         console.log(`Moeilijkheidsgraad verhoogd naar ${this.difficulty.toFixed(1)}`);
         console.log(`Nieuwe spawn interval: ${this.spawnInterval.toFixed(0)}ms`);
@@ -75,10 +71,9 @@ export class ZombieSpawner {
         if (!player) {
             console.log(`Geen speler gevonden - wave skip`);
             return;
-        }
-
-        // Bereken aantal zombies voor deze wave
-        const totalZombies = 1 + Math.floor(this.difficulty - 1);
+        }        // Bereken aantal zombies voor deze wave (meer agressief)
+        const baseZombies = 1 + Math.floor((this.difficulty - 1) * 1.2); // Meer zombies per difficulty level
+        const totalZombies = Math.min(6, baseZombies); // Cap op 6 zombies per wave
         
         // Kies random spawn patroon
         const patterns = ['single', 'line', 'circle', 'cluster'];

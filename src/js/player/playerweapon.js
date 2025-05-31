@@ -9,16 +9,13 @@ export class PlayerWeapon {
     maxBullets = 35; // Magazijn grootte
     fireRate = 100; // ms tussen schoten
     uiManager = null; // Reference to UI manager
-    
-    // Nieuw ammo systeem
-    totalAmmo = 250; // Totaal aantal kogels beschikbaar
-    maxTotalAmmo = 250; // Maximum totaal ammo
+      // Nieuw ammo systeem - UNLIMITED
+    totalAmmo = 250; // Start ammo - kan oneindig groeien via pickups
 
     constructor(player, uiManager = null) {
         this.player = player;
         this.uiManager = uiManager;
-        
-        console.log(`PlayerWeapon initialized: Magazine=${this.maxBullets}, Total ammo=${this.totalAmmo}`);
+          console.log(`PlayerWeapon initialized: Magazine=${this.maxBullets}, Starting ammo=${this.totalAmmo} (UNLIMITED)`);
         
         // Update initial ammo display
         this.updateAmmoUI();
@@ -68,6 +65,8 @@ export class PlayerWeapon {
         // Show reload indicator in UI
         if (this.uiManager) {
             this.uiManager.showReloadIndicator(true);
+            // Toon automatische reload feedback
+            this.uiManager.createReloadFeedback("Reloading...", "Green", 2500);
         }
           setTimeout(() => {
             // Bereken hoeveel kogels we nodig hebben voor vol magazijn
@@ -107,18 +106,16 @@ export class PlayerWeapon {
     // Get total ammo remaining
     getTotalAmmo() {
         return this.totalAmmo;
-    }
-
-    // Add ammo from pickup
+    }    // Add ammo from pickup - UNLIMITED AMMO
     addAmmo(amount) {
         const oldTotal = this.totalAmmo;
-        this.totalAmmo = Math.min(this.maxTotalAmmo, this.totalAmmo + amount);
+        this.totalAmmo += amount; // Geen maximum limiet meer!
         const actualAdded = this.totalAmmo - oldTotal;
         
-        console.log(`=== AMMO ADDED ===`);
+        console.log(`=== UNLIMITED AMMO ADDED ===`);
         console.log(`Pickup amount: ${amount}`);
         console.log(`Total ammo before: ${oldTotal}`);
-        console.log(`Total ammo after: ${this.totalAmmo}`);
+        console.log(`Total ammo after: ${this.totalAmmo} (NO LIMIT)`);
         console.log(`Actually added: ${actualAdded}`);
         console.log(`=== END AMMO ADD ===\n`);
         

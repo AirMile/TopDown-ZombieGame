@@ -11,15 +11,12 @@ export class AmmoPickup extends Actor {
             color: Color.Orange,
             collisionType: CollisionType.Passive
         });
-        
-        this.ammoAmount = 20; // Hoeveel ammo deze pickup geeft
-        this.lifetime = 30000; // 30 seconden voordat pickup verdwijnt
+          this.ammoAmount = 20; // Hoeveel ammo deze pickup geeft (verminderd van 20 naar 12)
         this.bobSpeed = 3; // Snelheid van bob animatie
         this.bobHeight = 5; // Hoogte van bob beweging
         this.startY = y;
         this.bobTimer = 0;
-        
-        console.log(`AmmoPickup created at position: x=${x}, y=${y}, ammo=${this.ammoAmount}`);
+          console.log(`AmmoPickup created at position: x=${x}, y=${y}, ammo=${this.ammoAmount}`);
     }
 
     onInitialize(engine) {
@@ -40,29 +37,13 @@ export class AmmoPickup extends Actor {
                 }
                 
                 // Verwijder pickup
-                this.kill();
-                console.log(`=== AMMO PICKUP CONSUMED ===\n`);
+                this.kill();                console.log(`=== AMMO PICKUP CONSUMED ===\n`);
             }
         });
-        
-        // Auto-remove na lifetime
-        setTimeout(() => {
-            if (this.isKilled()) return;
-            console.log(`AmmoPickup expired after ${this.lifetime}ms`);
-            this.kill();
-        }, this.lifetime);
-    }
-
-    onPreUpdate(engine, delta) {
+    }    onPreUpdate(engine, delta) {
         // Bob animatie - pickup beweegt lichtjes op en neer
         this.bobTimer += delta / 1000;
         const bobOffset = Math.sin(this.bobTimer * this.bobSpeed) * this.bobHeight;
         this.pos = new Vector(this.pos.x, this.startY + bobOffset);
-        
-        // Lifetime countdown
-        this.lifetime -= delta;
-        if (this.lifetime <= 0) {
-            this.kill();
-        }
     }
 }

@@ -30,7 +30,7 @@ export class SlowZombie extends Zombie {
         this.pos = new Vector(500, 300) // Moved further away from player
         
         console.log(`SlowZombie created at position: x=${this.pos.x}, y=${this.pos.y}`);// this.vel = new Vector(-2, 0) // Verwijderd, snelheid wordt dynamisch berekend in Zombie base class
-    }        onPreUpdate(engine, delta) {
+    }    onPreUpdate(engine, delta) {
         super.onPreUpdate(engine, delta);
         
         // Update initialization delay
@@ -42,7 +42,14 @@ export class SlowZombie extends Zombie {
         if (this.damageTimer > 0) {
             this.damageTimer -= delta;
         }
-          // Only check for collision after initialization delay
+        
+        // Log rotatie voor debug (elke 60 frames = ongeveer 1x per seconde)
+        if (Math.random() < 0.016) { // ~1/60 kans per frame
+            const rotationDegrees = (this.rotation * 180 / Math.PI).toFixed(1);
+            console.log(`SlowZombie rotatie: ${rotationDegrees}° (collider draait mee!)`);
+        }
+        
+        // Only check for collision after initialization delay
         if (this.initializationDelay <= 0) {
             this.checkPlayerCollision(engine, delta);
         } else if (this.initializationDelay <= 900) { // Log once when almost ready
@@ -82,14 +89,28 @@ export class SlowZombie extends Zombie {
             }
         }
     }    onInitialize(engine) {
-        super.onInitialize(engine); // Call base class onInitialize        // Vergroot collider naar schouder-breedte (veel breder voor échte schouder-tot-schouder)
+        super.onInitialize(engine); // Call base class onInitialize        
+        
+        // Vergroot collider naar schouder-breedte (veel breder voor échte schouder-tot-schouder)
         const colliderWidth = 80;  // Veel breder voor schouder-tot-schouder
         const colliderHeight = 35; // Ook hoger voor betere coverage
-        this.collider.set(Shape.Box(colliderWidth, colliderHeight));
-        console.log(`SlowZombie collider ingesteld op ${colliderWidth}x${colliderHeight} (échte schouder-breedte)`);
+        
+        // Centreer de collider en zorg dat hij meedraait met rotatie
+        const boxShape = Shape.Box(colliderWidth, colliderHeight);
+        this.collider.set(boxShape);
+        
+        // BELANGRIJK: Schakel rotatie in voor de collider zodat hij meedraait
+        this.collider.useBoxCollision = true;
+        this.body.useBoxCollision = true;
+        
+        console.log(`SlowZombie collider ingesteld op ${colliderWidth}x${colliderHeight} (gecentreerd en draait mee)`);
         
         // Extra debug: log de daadwerkelijke collider bounds
         console.log(`SlowZombie collider bounds: width=${this.collider.bounds.width}, height=${this.collider.bounds.height}`);
+        
+        // Maak collider zichtbaar voor debug (zodat je kunt zien dat hij meedraait)
+        this.graphics.showDebug = true;
+        console.log(`SlowZombie collider debug ingeschakeld - collider draait nu echt mee met rotatie!`);
         
         // Listen for collisions with bullets
         this.on('collisionstart', (event) => {

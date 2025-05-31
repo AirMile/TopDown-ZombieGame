@@ -72,11 +72,10 @@ export class Zombie extends Actor {
             console.log(`❌ Could not award points - collision manager not found`);
         }
     }
-    
-    // Drop ammo pickup when zombie is killed
+      // Drop ammo pickup when zombie is killed
     dropAmmoPickup() {
-        // 25% kans om ammo pickup te droppen
-        const dropChance = 0.25;
+        // 8% kans om ammo pickup te droppen (meer schaars gemaakt)
+        const dropChance = 0.08;
         const randomValue = Math.random();
         
         console.log(`=== AMMO DROP CHECK ===`);

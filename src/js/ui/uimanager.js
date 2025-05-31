@@ -6,32 +6,11 @@ export class UIManager {
         this.elements = new Map();
         this.healthFgRect = null; // Reference voor health bar Rectangle
         this.healthBarConfig = null; // Config voor health bar dimensions
-    }
-
-    // Create timer display
-    createTimer(initialTime) {
-        const timer = new Label({
-            text: this.formatTime(initialTime),
-            pos: new Vector(this.engine.drawWidth - 20, 20),
-            font: new Font({
-                family: 'Arial',
-                size: 32,
-                color: Color.White,
-                textAlign: TextAlign.Right
-            }),
-            anchor: new Vector(1, 0),
-            coordPlane: CoordPlane.Screen,
-            zIndex: 99
-        });
-        
-        this.engine.add(timer);
-        this.elements.set('timer', timer);
-        return timer;
     }    // Create ammo counter
     createAmmoCounter() {
         const ammoLabel = new Label({
             text: "Ammo: 35/35 | Total: 250",
-            pos: new Vector(this.engine.drawWidth - 20, 60),
+            pos: new Vector(this.engine.drawWidth - 20, 20),
             font: new Font({
                 family: 'Arial',
                 size: 24,
@@ -129,9 +108,7 @@ export class UIManager {
         console.log(`Health bar created: ${barWidth}x${barHeight} at (${barX}, ${barY})`);
         
         return healthBgActor;
-    }
-
-    // Create score display
+    }    // Create score display
     createScoreCounter() {
         const scoreLabel = new Label({
             text: "Score: 0",
@@ -153,12 +130,7 @@ export class UIManager {
         return scoreLabel;
     }
 
-    // Update timer display
-    updateTimer(timeRemaining) {
-        const timer = this.elements.get('timer');        if (timer) {
-            timer.text = this.formatTime(timeRemaining);
-        }
-    }    // Update ammo display
+    // Update ammo display
     updateAmmo(current, max, total = null) {
         const ammo = this.elements.get('ammo');
         if (ammo) {
@@ -244,14 +216,6 @@ export class UIManager {
         console.log(`Reload feedback shown: "${message}" (${colorName}, ${duration}ms)`);
         
         return feedbackLabel;
-    }
-
-    // Format time helper
-    formatTime(seconds) {
-        const minutes = Math.floor(seconds / 60);
-        const remainingSeconds = Math.floor(seconds % 60);
-        const formattedSeconds = remainingSeconds < 10 ? '0' + remainingSeconds : remainingSeconds;
-        return `Time: ${minutes}:${formattedSeconds}`;
     }    // Create game over screen
     createGameOverScreen(finalScore = 0, highScore = 0, isNewHighScore = false) {
         // First clear all existing UI elements
@@ -333,9 +297,7 @@ export class UIManager {
         this.elements.set('playAgain', playAgainLabel);
         
         return gameOverLabel;
-    }
-
-    // Create wave announcement
+    }    // Create wave announcement
     createWaveAnnouncement(text, duration = 3000) {
         const announcement = new Label({
             text: text,
@@ -361,16 +323,6 @@ export class UIManager {
         
         
         return announcement;
-    }
-
-    // Show game over with timer text
-    showGameOver() {
-        const timer = this.elements.get('timer');
-        if (timer) {
-            timer.text = "Game Over!";
-            
-        }
-        this.createGameOverScreen();
     }
 
     // Create main menu
@@ -402,16 +354,13 @@ export class UIManager {
             }),
             anchor: new Vector(0.5, 0.5),
             coordPlane: CoordPlane.Screen,
-            zIndex: 200
-        });
-        
-        // Controls info
-        const controlsLabel = new Label({
-            text: "WASD: Move | Mouse: Aim | Left Click: Shoot | R: Reload",
-            pos: new Vector(this.engine.drawWidth / 2, this.engine.drawHeight / 2 + 60),
+            zIndex: 200        });        // Controls info - multiple lines for all features
+        const controlsLabel1 = new Label({
+            text: "WASD: Move | WASD x 2: Dash | Shift + W: Sprint | Left/Right Arrow: Rotate | Space: Shoot | R: Reload",
+            pos: new Vector(this.engine.drawWidth / 2, this.engine.drawHeight / 2 + 50),
             font: new Font({
                 family: 'Arial',
-                size: 18,
+                size: 16,
                 color: Color.LightGray,
                 textAlign: TextAlign.Center
             }),
@@ -419,14 +368,15 @@ export class UIManager {
             coordPlane: CoordPlane.Screen,
             zIndex: 200
         });
-        
-        this.engine.add(titleLabel);
+          this.engine.add(titleLabel);
         this.engine.add(playLabel);
-        this.engine.add(controlsLabel);
+        this.engine.add(controlsLabel1);
+        this.engine.add(controlsLabel2);
         
         this.elements.set('menuTitle', titleLabel);
         this.elements.set('menuPlay', playLabel);
-        this.elements.set('menuControls', controlsLabel);
+        this.elements.set('menuControls1', controlsLabel1);
+        this.elements.set('menuControls2', controlsLabel2);
         
         return titleLabel;
     }    // Remove all UI elements
@@ -452,112 +402,7 @@ export class UIManager {
     // Check if element exists
     hasElement(name) {
         return this.elements.has(name);
-    }    // Show victory screen when player survives 3 minutes
-    showVictoryScreen(finalScore, highScore = 0, isNewHighScore = false) {
-        // Clear all existing UI elements first
-        this.clearAll();
-        
-        console.log(`Creating victory screen with score: ${finalScore}, high score: ${highScore}, new: ${isNewHighScore}`);
-        console.log(`Engine dimensions: ${this.engine.drawWidth} x ${this.engine.drawHeight}`);
-        
-        // Victory title
-        const victoryLabel = new Label({
-            text: "🎉 GEFELICITEERD! 🎉",
-            pos: new Vector(this.engine.drawWidth / 2, this.engine.drawHeight / 2 - 120),
-            font: new Font({
-                family: 'Arial',
-                size: 48,
-                color: Color.fromRGB(255, 215, 0), // Goud kleur
-                textAlign: TextAlign.Center
-            }),
-            anchor: new Vector(0.5, 0.5),
-            coordPlane: CoordPlane.Screen,
-            zIndex: 200
-        });
-        
-        // Subtitle
-        const subtitleLabel = new Label({
-            text: "Je hebt 3 minuten overleefd!",
-            pos: new Vector(this.engine.drawWidth / 2, this.engine.drawHeight / 2 - 60),
-            font: new Font({
-                family: 'Arial',
-                size: 24,
-                color: Color.fromRGB(255, 255, 255),
-                textAlign: TextAlign.Center
-            }),
-            anchor: new Vector(0.5, 0.5),
-            coordPlane: CoordPlane.Screen,
-            zIndex: 200
-        });
-        
-        // Final score display
-        const scoreLabel = new Label({
-            text: `Jouw Score: ${finalScore}`,
-            pos: new Vector(this.engine.drawWidth / 2, this.engine.drawHeight / 2 - 20),
-            font: new Font({
-                family: 'Arial',
-                size: 32,
-                color: Color.fromRGB(0, 255, 0), // Groen voor score
-                textAlign: TextAlign.Center
-            }),
-            anchor: new Vector(0.5, 0.5),
-            coordPlane: CoordPlane.Screen,
-            zIndex: 200
-        });
-        
-        // High score display
-        const highScoreColor = isNewHighScore ? Color.fromRGB(255, 215, 0) : Color.fromRGB(150, 150, 150);
-        const highScoreText = isNewHighScore ? `🎉 NIEUWE HOOGSTE SCORE: ${highScore}! 🎉` : `Hoogste Score: ${highScore}`;
-        
-        const highScoreLabel = new Label({
-            text: highScoreText,
-            pos: new Vector(this.engine.drawWidth / 2, this.engine.drawHeight / 2 + 20),
-            font: new Font({
-                family: 'Arial',
-                size: isNewHighScore ? 28 : 24,
-                color: highScoreColor,
-                textAlign: TextAlign.Center
-            }),
-            anchor: new Vector(0.5, 0.5),
-            coordPlane: CoordPlane.Screen,
-            zIndex: 200
-        });
-        
-        // Instructions
-        const instructionsLabel = new Label({
-            text: "Druk op SPATIE voor nieuw spel | ESC voor hoofdmenu",
-            pos: new Vector(this.engine.drawWidth / 2, this.engine.drawHeight / 2 + 80),
-            font: new Font({
-                family: 'Arial',
-                size: 18,
-                color: Color.fromRGB(200, 200, 200),
-                textAlign: TextAlign.Center
-            }),
-            anchor: new Vector(0.5, 0.5),
-            coordPlane: CoordPlane.Screen,
-            zIndex: 200
-        });
-        
-        // Add all elements to engine and store them
-        this.engine.add(victoryLabel);
-        this.engine.add(subtitleLabel);
-        this.engine.add(scoreLabel);
-        this.engine.add(highScoreLabel);
-        this.engine.add(instructionsLabel);
-        
-        this.elements.set('victoryTitle', victoryLabel);
-        this.elements.set('victorySubtitle', subtitleLabel);
-        this.elements.set('victoryScore', scoreLabel);
-        this.elements.set('victoryHighScore', highScoreLabel);
-        this.elements.set('victoryInstructions', instructionsLabel);
-        
-        console.log(`✅ Victory screen elements created and added to engine`);
-        console.log(`Victory labels added: ${this.elements.size} total UI elements`);
-        
-        return victoryLabel;
-    }
-    
-    // Helper method om kleur te berekenen op basis van health percentage
+    }    // Helper method om kleur te berekenen op basis van health percentage
     calculateHealthColor(healthPercent) {
         // Kleur interpolatie van groen (100%) naar rood (0%)
         
