@@ -1,10 +1,11 @@
-import { Label, Font, Color, Vector, CoordPlane, TextAlign } from "excalibur";
+import { Label, Font, Color, Vector, CoordPlane, TextAlign, Rectangle, Actor } from "excalibur";
 
 export class UIManager {
-    
-    constructor(engine) {
+      constructor(engine) {
         this.engine = engine;
         this.elements = new Map();
+        this.healthFgRect = null; // Reference voor health bar Rectangle
+        this.healthBarConfig = null; // Config voor health bar dimensions
     }
 
     // Create timer display
@@ -69,28 +70,65 @@ export class UIManager {
         this.elements.set('reload', reloadLabel);
         
         return reloadLabel;
-    }
-
-    // Create health display
+    }    // Create health bar display
     createHealthCounter(currentHealth, maxHealth) {
-        const healthLabel = new Label({
-            text: `Health: ${currentHealth}/${maxHealth}`,
-            pos: new Vector(20, 20),
-            font: new Font({
-                family: 'Arial',
-                size: 24,
-                color: Color.Green,
-                textAlign: TextAlign.Left
-            }),
-            anchor: new Vector(0, 0),
-            coordPlane: CoordPlane.Screen,
-            zIndex: 99
+        const barWidth = 200;
+        const barHeight = 20;
+        const barX = 20;
+        const barY = 20;
+        
+        // Health bar achtergrond (donker)
+        const healthBackground = new Rectangle({
+            width: barWidth,
+            height: barHeight,
+            color: Color.fromRGB(50, 50, 50) // Donkergrijs
         });
         
-        this.engine.add(healthLabel);
-        this.elements.set('health', healthLabel);
+        // Health bar voorgrond (verandert met health) - bewaar reference!
+        this.healthFgRect = new Rectangle({
+            width: barWidth,
+            height: barHeight,
+            color: Color.Green
+        });
         
-        return healthLabel;
+        // Container actor voor de achtergrond
+        const healthBgActor = new Actor({
+            pos: new Vector(barX, barY),
+            coordPlane: CoordPlane.Screen,
+            anchor: new Vector(0, 0),
+            zIndex: 98
+        });
+        healthBgActor.graphics.use(healthBackground);
+        
+        // Container actor voor de voorgrond
+        const healthFgActor = new Actor({
+            pos: new Vector(barX, barY),
+            coordPlane: CoordPlane.Screen,
+            anchor: new Vector(0, 0),
+            zIndex: 99
+        });
+        healthFgActor.graphics.use(this.healthFgRect); // Gebruik reference
+        
+        // Voeg alleen de bars toe aan engine (geen tekstlabel)
+        this.engine.add(healthBgActor);
+        this.engine.add(healthFgActor);
+        
+        // Store references
+        this.elements.set('healthBg', healthBgActor);
+        this.elements.set('healthFg', healthFgActor);
+        // Geen healthText meer
+        
+        // Store bar dimensions voor updates
+        this.healthBarConfig = {
+            width: barWidth,
+            height: barHeight,
+            x: barX,
+            y: barY
+        };
+        
+        console.log(`Health bar created: ${barWidth}x${barHeight} at (${barX}, ${barY})`);
+        
+        return healthBgActor;
     }
 
     // Create score display
@@ -140,23 +178,19 @@ export class UIManager {
                 ammo.font.color = Color.White;
             }
         }
-    }
-
-    // Update health display
+    }    // Update health bar display
     updateHealth(current, max) {
-        const health = this.elements.get('health');
-        if (health) {
-            health.text = `Health: ${current}/${max}`;
-            
-            // Change color based on health percentage
-            const healthPercent = current / max;            if (healthPercent > 0.6) {
-                health.font.color = Color.Green;
-            } else if (healthPercent > 0.3) {
-                health.font.color = Color.Yellow;
-            } else {
-                health.font.color = Color.Red;
-            }
-        }
+        if (!this.healthFgRect || !this.healthBarConfig) return;
+        // Bereken health percentage
+        const healthPercent = Math.max(0, current / max);
+        console.log(`Updating health bar: ${current}/${max} = ${(healthPercent * 100).toFixed(1)}%`);
+        // Update voorgrond breedte en kleur
+        const newWidth = this.healthBarConfig.width * healthPercent;
+        const healthColor = this.calculateHealthColor(healthPercent);
+        this.healthFgRect.width = newWidth;
+        this.healthFgRect.color = healthColor;
+        // Geen tekstlabel meer
+        console.log(`Health bar updated: width=${newWidth.toFixed(1)}, color=${healthColor.toString()}`);
     }
 
     // Update score display
@@ -366,6 +400,8 @@ export class UIManager {
         });
         
         this.elements.clear();
+        this.healthBarConfig = null; // Reset health bar config
+        this.healthFgRect = null; // Reset Rectangle reference
         console.log(`All UI elements cleared`);
     }
 
@@ -480,5 +516,26 @@ export class UIManager {
         console.log(`Victory labels added: ${this.elements.size} total UI elements`);
         
         return victoryLabel;
+    }
+    
+    // Helper method om kleur te berekenen op basis van health percentage
+    calculateHealthColor(healthPercent) {
+        // Kleur interpolatie van groen (100%) naar rood (0%)
+        
+        if (healthPercent >= 1.0) {
+            return Color.Green; // Volledig groen bij 100%
+        } else if (healthPercent <= 0.0) {
+            return Color.Red; // Volledig rood bij 0%
+        }
+        
+        // Interpolatie tussen groen en rood
+        // Groen: RGB(0, 255, 0)
+        // Rood: RGB(255, 0, 0)
+        
+        const red = Math.floor(255 * (1 - healthPercent));
+        const green = Math.floor(255 * healthPercent);
+        const blue = 0;
+        
+        return Color.fromRGB(red, green, blue);
     }
 }

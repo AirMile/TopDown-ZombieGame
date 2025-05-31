@@ -69,15 +69,15 @@ export class PlayerWeapon {
         if (this.uiManager) {
             this.uiManager.showReloadIndicator(true);
         }
-        
-        setTimeout(() => {
+          setTimeout(() => {
             // Bereken hoeveel kogels we nodig hebben voor vol magazijn
             const bulletsNeeded = this.bulletsFired;
             const bulletsToReload = Math.min(bulletsNeeded, this.totalAmmo);
             
             // Update ammo counts
             this.totalAmmo -= bulletsToReload;
-            this.bulletsFired = this.maxBullets - bulletsToReload;
+            // Bug fix: correcte berekening voor bulletsFired gebaseerd op werkelijk geladen kogels
+            this.bulletsFired = this.bulletsFired - bulletsToReload;
             
             this.reloading = false;
             

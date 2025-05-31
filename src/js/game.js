@@ -3,7 +3,6 @@ import { Engine, DisplayMode, Keys } from "excalibur";
 import { ResourceLoader } from './resources.js';
 import { Player } from './player/player.js';
 import { ZombieSpawner } from './zombies/zombiespawner.js';
-import { ZombieWaveManager } from './zombies/zombiewave.js';
 import { UIManager } from './ui/uimanager.js';
 import { CollisionManager } from './systems/collisionmanager.js';
 import { HighScoreManager } from './systems/highscoremanager.js';
@@ -24,13 +23,14 @@ export class Game extends Engine {
           // Initialize systems
         this.player = null;
         this.spawner = null;
-        this.waveManager = null;
         this.uiManager = null;
         this.collisionManager = null;
         this.highScoreManager = new HighScoreManager();
         
         this.start(ResourceLoader).then(() => this.showMainMenu());
-    }    showMainMenu() {
+    }
+    
+    showMainMenu() {
         this.gameState = 'MENU';
         this.clearGame();
         
@@ -81,11 +81,15 @@ export class Game extends Engine {
         if (this.collisionManager) {
             this.collisionManager.resetScore();
         }
+
+        // Stop spawner
+        if (this.spawner) {
+            this.spawner.stop();
+        }
         
         // Reset references
         this.player = null;
         this.spawner = null;
-        this.waveManager = null;
         this.collisionManager = null;
         
         console.log(`Game state cleared`);
@@ -107,53 +111,6 @@ export class Game extends Engine {
         this.add(this.player);
     }    initializeSpawner() {
         this.spawner = new ZombieSpawner(this);
-        this.waveManager = new ZombieWaveManager(this.spawner, this.uiManager);
-        
-        // Configure progressive zombie waves
-        this.waveManager.addWave({
-            enemies: [
-                { type: 'slow', count: 3, startX: 200, startY: 300, spreadX: 50, spreadY: 100 },
-                { type: 'fast', count: 2, startX: 800, startY: 300, spreadX: 50, spreadY: 100 }
-            ],
-            delay: 0,
-            message: "Wave 1: De invasie begint"
-        });
-        
-        this.waveManager.addWave({
-            enemies: [
-                { type: 'slow', count: 5, startX: 150, startY: 200, spreadX: 60, spreadY: 150 },
-                { type: 'fast', count: 3, startX: 850, startY: 400, spreadX: 60, spreadY: 150 }
-            ],
-            delay: 20000, // 20 seconds
-            message: "Wave 2: Meer zombies komen"
-        });
-        
-        this.waveManager.addWave({
-            enemies: [
-                { type: 'slow', count: 7, startX: 100, startY: 100, spreadX: 80, spreadY: 200 },
-                { type: 'fast', count: 5, startX: 900, startY: 500, spreadX: 80, spreadY: 200 }
-            ],
-            delay: 25000, // 25 seconds
-            message: "Wave 3: Intensiteit stijgt"
-        });
-        
-        this.waveManager.addWave({
-            enemies: [
-                { type: 'slow', count: 10, startX: 50, startY: 50, spreadX: 100, spreadY: 250 },
-                { type: 'fast', count: 8, startX: 950, startY: 550, spreadX: 100, spreadY: 250 }
-            ],
-            delay: 30000, // 30 seconds
-            message: "Wave 4: Chaos barst los!"
-        });
-        
-        this.waveManager.addWave({
-            enemies: [
-                { type: 'slow', count: 15, startX: 0, startY: 0, spreadX: 150, spreadY: 300 },
-                { type: 'fast', count: 12, startX: 1000, startY: 600, spreadX: 150, spreadY: 300 }
-            ],
-            delay: 35000, // 35 seconds  
-            message: "Wave 5: Finale storm!"
-        });
     }
 
     initializeUI() {
@@ -177,17 +134,22 @@ export class Game extends Engine {
     setupCamera() {
         this.currentScene.camera.strategy.lockToActor(this.player);
     }    spawnInitialZombies() {
-        // Start het wave systeem in plaats van statische spawns
-        console.log(`Starting zombie wave system...`);
-        this.waveManager.startWaves();
+        // Start het continuous spawning systeem
+        console.log(`Starting continuous zombie spawning system...`);
+        this.spawner.start();
         
-        console.log(`Zombie waves initialized with ${this.waveManager.getTotalWaves()} waves`);
+        console.log(`Continuous zombie spawning geactiveerd`);
     }onPreUpdate(engine, delta) {
         super.onPreUpdate(engine, delta);
 
         // Only update game logic when actually playing
         if (this.gameState !== 'PLAYING' || this.isGameOver) {
             return;
+        }
+
+        // Update spawner
+        if (this.spawner) {
+            this.spawner.update(delta);
         }
 
         // Update game timer
@@ -218,6 +180,11 @@ export class Game extends Engine {
         const isNewHighScore = this.highScoreManager.checkAndUpdateHighScore(finalScore);
         
         this.gameState = 'VICTORY';
+        
+        // Stop spawner
+        if (this.spawner) {
+            this.spawner.stop();
+        }
         
         // Stop alle entiteiten
         this.killAllEntities();
@@ -258,17 +225,17 @@ export class Game extends Engine {
         const isNewHighScore = this.highScoreManager.checkAndUpdateHighScore(finalScore);
         
         console.log(`Killing all entities and clearing scene...`);
+
+        // Stop spawner
+        if (this.spawner) {
+            this.spawner.stop();
+        }
         
         // Kill all entities including player
         this.killAllEntities();
         
         // Create game over screen met high score info
         this.uiManager.createGameOverScreen(finalScore, this.highScoreManager.getHighScore(), isNewHighScore);
-        
-        // Stop any ongoing waves
-        if (this.waveManager) {
-            this.waveManager.stopWaves();
-        }
         
         // Setup game over input handlers
         this.setupGameOverInput();
@@ -320,7 +287,7 @@ export class Game extends Engine {
 
     // Method to start wave-based gameplay
     startWaveMode() {
-        this.waveManager.startWaves();
+        this.spawner.start();
     }
 
     // Helper method to get current game statistics
@@ -330,8 +297,8 @@ export class Game extends Engine {
             playerHealth: this.player?.currentHealth || 0,
             playerMaxHealth: this.player?.maxHealth || 100,
             score: this.collisionManager?.getScore() || 0,
-            currentWave: this.waveManager?.getCurrentWave() || 0,
-            totalWaves: this.waveManager?.getTotalWaves() || 0
+            difficulty: this.spawner?.difficulty || 1,
+            spawnInterval: this.spawner?.spawnInterval || 2000
         };
     }    // Debug method to spawn test zombies
     spawnTestZombies() {

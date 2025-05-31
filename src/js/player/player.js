@@ -14,6 +14,9 @@ export class Player extends Actor {
             collisionType: CollisionType.Active
         });
 
+        // Add player tag for identification
+        this.tags.add('player');
+
         // Initialize sprite
         const sprite = Resources.Player.toSprite();
         sprite.scale = new Vector(0.9, 0.9);
