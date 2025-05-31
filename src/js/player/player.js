@@ -24,11 +24,11 @@ export class Player extends Actor {
         this.vel = new Vector(0, 0);        // Initialize subsystems
         this.weapon = new PlayerWeapon(this);
         this.movement = new PlayerMovement(this);
-        this.input = new PlayerInput(this);
-
-        // Initialize health system
+        this.input = new PlayerInput(this);        // Initialize health system
         this.maxHealth = 100;
         this.currentHealth = this.maxHealth;
+        
+        console.log(`Player initialized with health: ${this.currentHealth}/${this.maxHealth}`);
         this.isInvulnerable = false;
         this.invulnerabilityTime = 1000; // 1 second
         this.invulnerabilityTimer = 0;
@@ -82,13 +82,11 @@ export class Player extends Actor {
         }
         if (engine.input.keyboard.isHeld(Keys.Left)) {
             this.rotation -= 0.02;
-        }
-
-        // Get movement input
+        }        // Get movement input
         const { speed, strafe, isSprinting } = this.input.getMovementInput(engine);
 
         // Handle shooting
-        if (!isSprinting && !this.input.isTurning && this.weapon.canShoot()) {
+        if (!isSprinting && this.weapon.canShoot()) {
             this.weapon.shoot();
         }
 
@@ -97,16 +95,28 @@ export class Player extends Actor {
             this.vel = this.movement.calculateVelocity(speed, strafe);        } else {
             this.vel = Vector.Zero;
         }
-    }
-
-    takeHit(damage = 10) {
+    }    takeHit(damage = 10) {
+        console.log(`=== PLAYER TAKING DAMAGE ===`);
+        console.log(`Damage amount: ${damage}`);
+        console.log(`Player health before damage: ${this.currentHealth}/${this.maxHealth}`);
+        console.log(`Player invulnerable: ${this.isInvulnerable}`);
+        
         if (this.isInvulnerable) {
+            console.log(`❌ Player is invulnerable - damage blocked!`);
             return;
+        }        this.currentHealth -= damage;
+        
+        // Zorgen dat health nooit onder 0 komt
+        if (this.currentHealth < 0) {
+            this.currentHealth = 0;
         }
-
-        this.currentHealth -= damage;
+        
         this.isInvulnerable = true;
         this.invulnerabilityTimer = this.invulnerabilityTime;
+        
+        console.log(`✅ Player took ${damage} damage`);
+        console.log(`Player health after damage: ${this.currentHealth}/${this.maxHealth}`);
+        console.log(`Player invulnerability activated for ${this.invulnerabilityTime}ms`);
         
         // Update UI if available
         if (this.scene?.engine?.uiManager) {
@@ -116,14 +126,34 @@ export class Player extends Actor {
         // Check for death
         if (this.currentHealth <= 0) {
             this.currentHealth = 0;
-            this.handleDeath();        }
-    }
-
-    handleDeath() {
-        // TODO: Trigger game over
+            console.log(`💀 PLAYER HEALTH REACHED ZERO - TRIGGERING DEATH!`);
+            this.handleDeath();
+        }
+        
+        console.log(`=== END PLAYER DAMAGE ===\n`);
+    }    handleDeath() {
+        console.log(`=== PLAYER DEATH SEQUENCE ===`);
+        console.log(`Player final health: ${this.currentHealth}`);
+        console.log(`Player position: x=${this.pos.x.toFixed(1)}, y=${this.pos.y.toFixed(1)}`);
+        console.log(`Triggering game over...`);
+        
+        // Stop player movement immediately
+        this.vel = Vector.Zero;
+        
+        // Disable player controls to prevent further input
+        if (this.input) {
+            this.input.enabled = false;
+        }
+        
+        // Trigger game over (this will kill all entities including this player)
         if (this.scene?.engine?.endGame) {
             this.scene.engine.endGame();
+            console.log(`✅ Game over triggered successfully`);
+        } else {
+            console.log(`❌ Could not trigger game over - endGame method not found`);
         }
+        
+        console.log(`=== END PLAYER DEATH ===\n`);
     }
 
     // Get current health percentage

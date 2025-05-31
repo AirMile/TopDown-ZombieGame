@@ -1,11 +1,12 @@
 import '../css/style.css';
-import { Engine, DisplayMode } from "excalibur";
+import { Engine, DisplayMode, Keys } from "excalibur";
 import { ResourceLoader } from './resources.js';
 import { Player } from './player/player.js';
 import { ZombieSpawner } from './zombies/zombiespawner.js';
 import { ZombieWaveManager } from './zombies/zombiewave.js';
 import { UIManager } from './ui/uimanager.js';
 import { CollisionManager } from './systems/collisionmanager.js';
+import { HighScoreManager } from './systems/highscoremanager.js';
 
 export class Game extends Engine {
     constructor() {
@@ -16,18 +17,78 @@ export class Game extends Engine {
             displayMode: DisplayMode.FitScreen
         });
         
-        // Game state
+        // Game states
+        this.gameState = 'MENU'; // 'MENU', 'PLAYING', 'GAME_OVER'
         this.gameTimeRemaining = 180; // 3 minutes
         this.isGameOver = false;
-        
-        // Initialize systems
+          // Initialize systems
         this.player = null;
         this.spawner = null;
         this.waveManager = null;
         this.uiManager = null;
         this.collisionManager = null;
+        this.highScoreManager = new HighScoreManager();
         
-        this.start(ResourceLoader).then(() => this.startGame());
+        this.start(ResourceLoader).then(() => this.showMainMenu());
+    }    showMainMenu() {
+        this.gameState = 'MENU';
+        this.clearGame();
+        
+        // Initialize UI manager for main menu
+        this.uiManager = new UIManager(this);
+        this.uiManager.createMainMenu();
+        
+        // Setup main menu input handlers
+        this.setupMainMenuInput();
+    }
+    
+    setupMainMenuInput() {
+        this.input.keyboard.on('press', (evt) => {
+            if (this.gameState === 'MENU' && evt.key === Keys.Space) {
+                this.startNewGame();
+            }
+        });
+    }
+    
+    startNewGame() {
+        this.gameState = 'PLAYING';
+        this.clearGame();
+        this.resetGameState();
+        this.startGame();
+    }
+    
+    resetGameState() {
+        this.gameTimeRemaining = 180; // Reset to 3 minutes
+        this.isGameOver = false;
+        
+        // Clear all actors from the scene
+        this.currentScene.clear();
+    }
+      clearGame() {
+        console.log(`Clearing game state...`);
+        
+        // Remove all actors from current scene
+        if (this.currentScene) {
+            this.currentScene.clear();
+        }
+        
+        // Clear UI
+        if (this.uiManager) {
+            this.uiManager.clearAll();
+        }
+        
+        // Reset collision manager score
+        if (this.collisionManager) {
+            this.collisionManager.resetScore();
+        }
+        
+        // Reset references
+        this.player = null;
+        this.spawner = null;
+        this.waveManager = null;
+        this.collisionManager = null;
+        
+        console.log(`Game state cleared`);
     }    startGame() {
         // Initialize systems
         this.initializePlayer();
@@ -36,33 +97,62 @@ export class Game extends Engine {
         this.initializeCollisions();
         this.setupCamera();
         
+        // Setup input handlers for gameplay
+        this.setupGameOverInput();
+        
         // Start the game
         this.spawnInitialZombies();
-    }    initializePlayer() {
+    }initializePlayer() {
         this.player = new Player();
         this.add(this.player);
-    }
-
-    initializeSpawner() {
+    }    initializeSpawner() {
         this.spawner = new ZombieSpawner(this);
         this.waveManager = new ZombieWaveManager(this.spawner, this.uiManager);
         
-        // Configure waves (optional - voor later gebruik)
+        // Configure progressive zombie waves
         this.waveManager.addWave({
             enemies: [
-                { type: 'slow', count: 5, startX: 200, startY: 300 },
-                { type: 'fast', count: 3, startX: 800, startY: 300 }
+                { type: 'slow', count: 3, startX: 200, startY: 300, spreadX: 50, spreadY: 100 },
+                { type: 'fast', count: 2, startX: 800, startY: 300, spreadX: 50, spreadY: 100 }
             ],
             delay: 0,
-            message: "Wave 1: Warm-up"
+            message: "Wave 1: De invasie begint"
         });
         
         this.waveManager.addWave({
             enemies: [
-                { type: 'slow', count: 8, startX: 200, startY: 200 },
-                { type: 'fast', count: 5, startX: 900, startY: 400 }
+                { type: 'slow', count: 5, startX: 150, startY: 200, spreadX: 60, spreadY: 150 },
+                { type: 'fast', count: 3, startX: 850, startY: 400, spreadX: 60, spreadY: 150 }
             ],
-            delay: 30000, // 30 seconds after wave 1            message: "Wave 2: Getting Serious"
+            delay: 20000, // 20 seconds
+            message: "Wave 2: Meer zombies komen"
+        });
+        
+        this.waveManager.addWave({
+            enemies: [
+                { type: 'slow', count: 7, startX: 100, startY: 100, spreadX: 80, spreadY: 200 },
+                { type: 'fast', count: 5, startX: 900, startY: 500, spreadX: 80, spreadY: 200 }
+            ],
+            delay: 25000, // 25 seconds
+            message: "Wave 3: Intensiteit stijgt"
+        });
+        
+        this.waveManager.addWave({
+            enemies: [
+                { type: 'slow', count: 10, startX: 50, startY: 50, spreadX: 100, spreadY: 250 },
+                { type: 'fast', count: 8, startX: 950, startY: 550, spreadX: 100, spreadY: 250 }
+            ],
+            delay: 30000, // 30 seconds
+            message: "Wave 4: Chaos barst los!"
+        });
+        
+        this.waveManager.addWave({
+            enemies: [
+                { type: 'slow', count: 15, startX: 0, startY: 0, spreadX: 150, spreadY: 300 },
+                { type: 'fast', count: 12, startX: 1000, startY: 600, spreadX: 150, spreadY: 300 }
+            ],
+            delay: 35000, // 35 seconds  
+            message: "Wave 5: Finale storm!"
         });
     }
 
@@ -86,37 +176,19 @@ export class Game extends Engine {
 
     setupCamera() {
         this.currentScene.camera.strategy.lockToActor(this.player);
-    }
-
-    spawnInitialZombies() {
-        // Spawn initial zombies using the spawner
-        this.spawner.addSpawnConfig({
-            type: 'slow',
-            count: 10,
-            startX: 200,
-            startY: 300,
-            spreadX: 60,
-            spreadY: 200
-        });
+    }    spawnInitialZombies() {
+        // Start het wave systeem in plaats van statische spawns
+        console.log(`Starting zombie wave system...`);
+        this.waveManager.startWaves();
         
-        this.spawner.addSpawnConfig({
-            type: 'fast',
-            count: 10,
-            startX: 800,
-            startY: 300,
-            spreadX: 60,
-            spreadY: 200
-        });
-          this.spawner.spawnAll();
-        
-        // Optionally start wave system instead
-        // this.waveManager.startWaves();
-    }
-
-    onPreUpdate(engine, delta) {
+        console.log(`Zombie waves initialized with ${this.waveManager.getTotalWaves()} waves`);
+    }onPreUpdate(engine, delta) {
         super.onPreUpdate(engine, delta);
 
-        if (this.isGameOver) return;
+        // Only update game logic when actually playing
+        if (this.gameState !== 'PLAYING' || this.isGameOver) {
+            return;
+        }
 
         // Update game timer
         this.updateGameTimer(delta);
@@ -126,15 +198,34 @@ export class Game extends Engine {
         
         // Update UI
         this.updateUI();
-    }
-
-    updateGameTimer(delta) {
+    }    updateGameTimer(delta) {
         this.gameTimeRemaining -= delta / 1000;
         
         if (this.gameTimeRemaining <= 0) {
             this.gameTimeRemaining = 0;
-            this.endGame();
+            // Speler heeft gewonnen! 3 minuten overleefd
+            this.winGame();
         }
+    }
+      winGame() {
+        console.log(`=== SPELER HEEFT GEWONNEN! ===`);
+        console.log(`Tijd overleefd: 3 minuten`);
+        
+        const finalScore = this.collisionManager.getScore();
+        console.log(`Eindresultaat: ${finalScore} punten`);
+        
+        // Check en update high score
+        const isNewHighScore = this.highScoreManager.checkAndUpdateHighScore(finalScore);
+        
+        this.gameState = 'VICTORY';
+        
+        // Stop alle entiteiten
+        this.killAllEntities();
+        
+        // Toon overwinning scherm met high score info
+        this.uiManager.showVictoryScreen(finalScore, this.highScoreManager.getHighScore(), isNewHighScore);
+        
+        console.log(`=== OVERWINNING SCHERM GETOOND ===\n`);
     }
 
     updateCamera() {
@@ -147,22 +238,79 @@ export class Game extends Engine {
     updateUI() {
         // Update timer
         this.uiManager.updateTimer(this.gameTimeRemaining);
-        
-        // Update ammo counter if player weapon exists
+          // Update ammo counter if player weapon exists
         if (this.player?.weapon) {
-            const currentAmmo = this.player.weapon.maxBullets - this.player.weapon.bulletsFired;
-            this.uiManager.updateAmmo(currentAmmo, this.player.weapon.maxBullets);
+            const currentAmmo = this.player.weapon.getCurrentAmmo();
+            const totalAmmo = this.player.weapon.getTotalAmmo();
+            this.uiManager.updateAmmo(currentAmmo, this.player.weapon.maxBullets, totalAmmo);
             this.uiManager.showReloadIndicator(this.player.weapon.reloading);
         }
-    }
-
-    endGame() {        this.isGameOver = true;
-        this.uiManager.createGameOverScreen();
+    }    endGame() {
+        this.gameState = 'GAME_OVER';
+        this.isGameOver = true;
+        
+        console.log(`=== GAME OVER SEQUENCE ===`);
+        
+        const finalScore = this.collisionManager.getScore();
+        console.log(`Final score: ${finalScore} punten`);
+        
+        // Check en update high score
+        const isNewHighScore = this.highScoreManager.checkAndUpdateHighScore(finalScore);
+        
+        console.log(`Killing all entities and clearing scene...`);
+        
+        // Kill all entities including player
+        this.killAllEntities();
+        
+        // Create game over screen met high score info
+        this.uiManager.createGameOverScreen(finalScore, this.highScoreManager.getHighScore(), isNewHighScore);
         
         // Stop any ongoing waves
         if (this.waveManager) {
             this.waveManager.stopWaves();
         }
+        
+        // Setup game over input handlers
+        this.setupGameOverInput();
+        
+        console.log(`=== GAME OVER COMPLETE ===\n`);
+    }
+    
+    killAllEntities() {
+        console.log(`Killing all entities in the scene...`);
+        
+        // Get all actors in the current scene
+        const allActors = this.currentScene.actors;
+        const entityCount = allActors.length;
+        
+        console.log(`Found ${entityCount} entities to remove`);
+        
+        // Kill all actors (including player, zombies, bullets)
+        allActors.forEach(actor => {
+            if (actor && typeof actor.kill === 'function') {
+                console.log(`Killing entity: ${actor.constructor.name}`);
+                actor.kill();
+            }
+        });
+        
+        // Clear the scene completely
+        this.currentScene.clear();
+        
+        console.log(`All entities killed and scene cleared`);
+    }    setupGameOverInput() {
+        // Remove existing input handlers to avoid conflicts
+        this.input.keyboard.off('press');
+          this.input.keyboard.on('press', (evt) => {
+            if (this.gameState === 'GAME_OVER' || this.gameState === 'VICTORY') {
+                if (evt.key === Keys.Space) {
+                    // Restart game
+                    this.startNewGame();
+                } else if (evt.key === Keys.Escape) {
+                    // Return to main menu
+                    this.showMainMenu();
+                }
+            }
+        });
     }
 
     // Helper method to spawn zombies during gameplay

@@ -6,14 +6,19 @@ export class PlayerWeapon {
     bulletsFired = 0;
     reloading = false;
     reloadTime = 2500;
-    maxBullets = 35;
+    maxBullets = 35; // Magazijn grootte
     fireRate = 100; // ms tussen schoten
     uiManager = null; // Reference to UI manager
+    
+    // Nieuw ammo systeem
+    totalAmmo = 250; // Totaal aantal kogels beschikbaar
+    maxTotalAmmo = 250; // Maximum totaal ammo
 
     constructor(player, uiManager = null) {
         this.player = player;
         this.uiManager = uiManager;
         
+        console.log(`PlayerWeapon initialized: Magazine=${this.maxBullets}, Total ammo=${this.totalAmmo}`);
         
         // Update initial ammo display
         this.updateAmmoUI();
@@ -23,10 +28,8 @@ export class PlayerWeapon {
         if (this.fireCooldown > 0) {
             this.fireCooldown -= delta;
         }
-    }
-
-    canShoot() {
-        return !this.reloading && this.fireCooldown <= 0;
+    }    canShoot() {
+        return !this.reloading && this.fireCooldown <= 0 && this.getCurrentAmmo() > 0;
     }
 
     shoot() {
@@ -38,9 +41,12 @@ export class PlayerWeapon {
         
         if (this.player.scene?.engine) {
             this.player.scene.engine.add(bullet);
-        }        this.bulletsFired++;
+        }
+
+        this.bulletsFired++;
         this.fireCooldown = this.fireRate;
         
+        console.log(`Shot fired: Magazine ammo=${this.getCurrentAmmo()}, Total ammo=${this.totalAmmo}`);
 
         // Update ammo UI
         this.updateAmmoUI();
@@ -49,8 +55,15 @@ export class PlayerWeapon {
             this.startReload();
         }
     }    startReload() {
+        // Check of we genoeg totaal ammo hebben voor reload
+        if (this.totalAmmo <= 0) {
+            console.log(`❌ Cannot reload: No total ammo remaining (${this.totalAmmo})`);
+            return;
+        }
+        
         this.reloading = true;
         
+        console.log(`🔄 Reload started: Magazine=${this.getCurrentAmmo()}, Total=${this.totalAmmo}`);
         
         // Show reload indicator in UI
         if (this.uiManager) {
@@ -58,9 +71,17 @@ export class PlayerWeapon {
         }
         
         setTimeout(() => {
-            this.bulletsFired = 0;
+            // Bereken hoeveel kogels we nodig hebben voor vol magazijn
+            const bulletsNeeded = this.bulletsFired;
+            const bulletsToReload = Math.min(bulletsNeeded, this.totalAmmo);
+            
+            // Update ammo counts
+            this.totalAmmo -= bulletsToReload;
+            this.bulletsFired = this.maxBullets - bulletsToReload;
+            
             this.reloading = false;
             
+            console.log(`✅ Reload complete: Magazine=${this.getCurrentAmmo()}, Total=${this.totalAmmo}, Bullets reloaded=${bulletsToReload}`);
             
             // Hide reload indicator and update ammo UI
             if (this.uiManager) {
@@ -68,34 +89,54 @@ export class PlayerWeapon {
                 this.updateAmmoUI();
             }
         }, this.reloadTime);
-    }
-
-    // Manual reload (can be triggered by R key)
+    }    // Manual reload (can be triggered by R key)
     manualReload() {
-        if (!this.reloading && this.bulletsFired > 0) {
-            
+        if (!this.reloading && this.bulletsFired > 0 && this.totalAmmo > 0) {
+            console.log(`Manual reload triggered: Current magazine=${this.getCurrentAmmo()}, Total ammo=${this.totalAmmo}`);
             this.startReload();
             return true;
         }
         return false;
     }
 
-    // Get current ammo count
+    // Get current ammo count in magazine
     getCurrentAmmo() {
         return this.maxBullets - this.bulletsFired;
+    }
+
+    // Get total ammo remaining
+    getTotalAmmo() {
+        return this.totalAmmo;
+    }
+
+    // Add ammo from pickup
+    addAmmo(amount) {
+        const oldTotal = this.totalAmmo;
+        this.totalAmmo = Math.min(this.maxTotalAmmo, this.totalAmmo + amount);
+        const actualAdded = this.totalAmmo - oldTotal;
+        
+        console.log(`=== AMMO ADDED ===`);
+        console.log(`Pickup amount: ${amount}`);
+        console.log(`Total ammo before: ${oldTotal}`);
+        console.log(`Total ammo after: ${this.totalAmmo}`);
+        console.log(`Actually added: ${actualAdded}`);
+        console.log(`=== END AMMO ADD ===\n`);
+        
+        // Update UI
+        this.updateAmmoUI();
+        
+        return actualAdded;
     }
 
     // Get reload progress (0-1)
     getReloadProgress() {
         // This could be used for a reload progress bar in the future
         return this.reloading ? 0.5 : 1.0; // Simplified for now
-    }
-
-    // Update ammo display in UI
+    }    // Update ammo display in UI
     updateAmmoUI() {
         if (this.uiManager) {
             const currentAmmo = this.maxBullets - this.bulletsFired;
-            this.uiManager.updateAmmo(currentAmmo, this.maxBullets);
+            this.uiManager.updateAmmo(currentAmmo, this.maxBullets, this.totalAmmo);
         }
     }
 
