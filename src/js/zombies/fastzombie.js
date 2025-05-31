@@ -1,5 +1,5 @@
 import { Zombie } from "./zombie.js"
-import { Vector, Color, CollisionType } from "excalibur"
+import { Vector, Color, CollisionType, Shape, vec } from "excalibur"
 import { Resources } from "../resources.js"
 import { Player } from "../player/player.js";
 import { Bullet } from "../weapons/bullet.js";
@@ -18,20 +18,17 @@ export class FastZombie extends Zombie {
         this.health = this.maxHealth;        // Damage cooldown system
         this.damageTimer = 0; // Timer voor damage cooldown
         this.damageCooldown = 500; // 0.5 seconds in milliseconds
-        this.initializationDelay = 1000; // 1 second delay before damage can be applied
-
-        // Kies random sprite
+        this.initializationDelay = 1000; // 1 second delay before damage can be applied        // Kies random sprite
         const fastSprites = [
             Resources.FastZombie1,
             Resources.FastZombie2,
             Resources.FastZombie3,
             Resources.FastZombie4
-        ];
-        const spriteIndex = Math.floor(Math.random() * fastSprites.length);
+        ];        const spriteIndex = Math.floor(Math.random() * fastSprites.length);
         const sprite = fastSprites[spriteIndex].toSprite();
         sprite.scale = new Vector(0.5, 0.5); // Scale sprite to 50%
+        sprite.tint = Color.fromRGB(255, 80, 80); // Roodachtige tint op sprite zelf!
         this.graphics.use(sprite);
-          this.graphics.current.tint = Color.fromRGB(255, 80, 80) // Roodachtige tint
         this.pos = new Vector(800, 300)
         this.vel = new Vector(-15, 0)
         
@@ -87,8 +84,15 @@ export class FastZombie extends Zombie {
                 console.log(`=== DAMAGE TIMER RESET TO ${this.damageCooldown}ms ===\n`);
             }
         }
-    }onInitialize(engine) {
-        super.onInitialize(engine); // Call base class onInitialize
+    }    onInitialize(engine) {
+        super.onInitialize(engine); // Call base class onInitialize        // Vergroot collider naar schouder-breedte (veel breder voor échte schouder-tot-schouder)
+        const colliderWidth = 80;  // Veel breder voor schouder-tot-schouder
+        const colliderHeight = 33; // Ook hoger voor betere coverage
+        this.collider.set(Shape.Box(colliderWidth, colliderHeight));
+        console.log(`FastZombie collider ingesteld op ${colliderWidth}x${colliderHeight} (échte schouder-breedte)`);
+        
+        // Extra debug: log de daadwerkelijke collider bounds
+        console.log(`FastZombie collider bounds: width=${this.collider.bounds.width}, height=${this.collider.bounds.height}`);
         
         // Listen for collisions with bullets
         this.on('collisionstart', (event) => {
