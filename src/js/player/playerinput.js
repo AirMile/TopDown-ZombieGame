@@ -15,6 +15,7 @@ export class PlayerInput {
         let speed = 0;
         let strafe = 0;
         const isSprinting = engine.input.keyboard.isHeld(Keys.ShiftLeft);
+        const isShooting = engine.input.keyboard.isHeld(Keys.Space);
 
         if (engine.input.keyboard.isHeld(Keys.W)) {
             speed = isSprinting ? baseSpeed * 2 : baseSpeed;
@@ -27,6 +28,6 @@ export class PlayerInput {
         }
         if (engine.input.keyboard.isHeld(Keys.A)) {
             strafe = -baseSpeed;
-        }        return { speed, strafe, isSprinting };
+        }        return { speed, strafe, isSprinting, isShooting };
     }
 }

@@ -57,12 +57,69 @@ export class Player extends Actor {
                 this.movement.startDash(-1);
             }
 
-            // R key for manual reload
+            // R key for manual reload - VERBETERDE VERSIE
             if (evt.key === Keys.R) {
-                if (this.weapon) {
-                    this.weapon.manualReload();                }
+                this.handleReloadInput();
             }
         });
+    }
+
+    // Nieuwe method voor reload handling
+    handleReloadInput() {
+        console.log(`=== RELOAD INPUT DETECTED ===`);
+        console.log(`Current magazine ammo: ${this.weapon.getCurrentAmmo()}/${this.weapon.maxBullets}`);
+        console.log(`Total ammo: ${this.weapon.getTotalAmmo()}`);
+        console.log(`Currently reloading: ${this.weapon.reloading}`);
+        
+        if (!this.weapon) {
+            console.log(`❌ No weapon found!`);
+            return;
+        }
+        
+        // Get UI manager for feedback
+        const uiManager = this.scene?.engine?.uiManager;
+        
+        // Check of reload mogelijk is
+        if (this.weapon.reloading) {
+            console.log(`❌ Already reloading - cannot reload again`);
+            if (uiManager) {
+                uiManager.createReloadFeedback("Already Reloading!", "Orange");
+            }
+            return;
+        }
+        
+        if (this.weapon.getCurrentAmmo() >= this.weapon.maxBullets) {
+            console.log(`❌ Magazine is already full (${this.weapon.getCurrentAmmo()}/${this.weapon.maxBullets})`);
+            if (uiManager) {
+                uiManager.createReloadFeedback("Magazine Full!", "Yellow");
+            }
+            return;
+        }
+        
+        if (this.weapon.getTotalAmmo() <= 0) {
+            console.log(`❌ No total ammo remaining (${this.weapon.getTotalAmmo()})`);
+            if (uiManager) {
+                uiManager.createReloadFeedback("No Ammo Left!", "Red");
+            }
+            return;
+        }
+        
+        // Trigger reload
+        const reloadSuccess = this.weapon.manualReload();
+        
+        if (reloadSuccess) {
+            console.log(`✅ Manual reload started successfully`);
+            if (uiManager) {
+                uiManager.createReloadFeedback("Reloading...", "Green", 2500);
+            }
+        } else {
+            console.log(`❌ Manual reload failed`);
+            if (uiManager) {
+                uiManager.createReloadFeedback("Reload Failed!", "Red");
+            }
+        }
+        
+        console.log(`=== END RELOAD INPUT ===\n`);
     }
 
     onPreUpdate(engine, delta) {
@@ -85,12 +142,15 @@ export class Player extends Actor {
         }
         if (engine.input.keyboard.isHeld(Keys.Left)) {
             this.rotation -= 0.02;
-        }        // Get movement input
-        const { speed, strafe, isSprinting } = this.input.getMovementInput(engine);
+        }
 
-        // Handle shooting
-        if (!isSprinting && this.weapon.canShoot()) {
+        // Get movement input (nu inclusief isShooting)
+        const { speed, strafe, isSprinting, isShooting } = this.input.getMovementInput(engine);
+
+        // Handle shooting - alleen wanneer spatiebalk ingedrukt is
+        if (isShooting && !isSprinting && this.weapon.canShoot()) {
             this.weapon.shoot();
+            console.log(`Player shooting: ammo=${this.weapon.getCurrentAmmo()}`);
         }
 
         // Apply movement if not dashing

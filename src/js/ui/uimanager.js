@@ -207,6 +207,45 @@ export class UIManager {
         }
     }
 
+    // Create reload feedback messages
+    createReloadFeedback(message, colorName = "White", duration = 1500) {
+        // Color mapping
+        const colorMap = {
+            "Red": Color.Red,
+            "Green": Color.Green,
+            "Yellow": Color.Yellow,
+            "Orange": Color.Orange,
+            "White": Color.White
+        };
+
+        const feedbackColor = colorMap[colorName] || Color.White;
+
+        const feedbackLabel = new Label({
+            text: message,
+            pos: new Vector(this.engine.drawWidth / 2, this.engine.drawHeight / 2 + 150),
+            font: new Font({
+                family: 'Arial',
+                size: 32,
+                color: feedbackColor,
+                textAlign: TextAlign.Center
+            }),
+            anchor: new Vector(0.5, 0.5),
+            coordPlane: CoordPlane.Screen,
+            zIndex: 150
+        });
+        
+        this.engine.add(feedbackLabel);
+        
+        // Auto-remove after duration
+        setTimeout(() => {
+            this.engine.remove(feedbackLabel);
+        }, duration);
+        
+        console.log(`Reload feedback shown: "${message}" (${colorName}, ${duration}ms)`);
+        
+        return feedbackLabel;
+    }
+
     // Format time helper
     formatTime(seconds) {
         const minutes = Math.floor(seconds / 60);
