@@ -1,77 +1,61 @@
-
 export class HighScoreManager {
     constructor() {
         this.storageKey = 'zombieShooterHighScore';
         this.highScore = this.loadHighScore();
-        
-
     }
 
-    // Laad de hoogste score uit localStorage
     loadHighScore() {
         try {
             const saved = localStorage.getItem(this.storageKey);
             const score = saved ? parseInt(saved, 10) : 0;
-
+            this.highScore = score;
             return score;
         } catch (error) {
-
+            this.highScore = 0;
             return 0;
         }
     }
 
-    // Sla nieuwe hoogste score op
     saveHighScore(score) {
         try {
             localStorage.setItem(this.storageKey, score.toString());
-
+            this.highScore = score;
             return true;
         } catch (error) {
-
             return false;
         }
-    }    // Controleer of score een nieuwe hoogste score is en sla op indien nodig
-    checkAndUpdateHighScore(newScore) {
-
-
-
-        
-        if (newScore > this.highScore) {
-            const oldHighScore = this.highScore;
-            this.highScore = newScore;
-            this.saveHighScore(newScore);
-            
-
-
-            return true; // Nieuwe hoogste score
-        } else {
-
-
-            return false; // Geen nieuwe hoogste score
-        }
-    }    // Verkrijg huidige hoogste score
-    getHighScore() {
-        return this.highScore;
     }
 
-    // Reset hoogste score (voor debugging)
+    checkAndUpdateHighScore(newScore) {
+        if (newScore > this.highScore) {
+            this.saveHighScore(newScore);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    getHighScore() {
+        return this.loadHighScore();
+    }
+
     resetHighScore() {
         this.highScore = 0;
         try {
             localStorage.removeItem(this.storageKey);
-
             return true;
         } catch (error) {
-
             return false;
         }
-    }    // Verkrijg score statistieken voor weergave
+    }
+
     getScoreStats(currentScore) {
+        const highScore = this.loadHighScore();
         return {
             currentScore: currentScore,
-            highScore: this.highScore,
-            isNewHighScore: currentScore > this.highScore,
-            improvement: currentScore - this.highScore
+            highScore: highScore,
+            isNewHighScore: currentScore > highScore,
+            improvement: currentScore - highScore
         };
     }
 }

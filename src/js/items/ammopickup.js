@@ -2,9 +2,9 @@ import { Actor, Vector, Color, CollisionType } from "excalibur";
 import { Player } from "../player/player.js";
 
 export class AmmoPickup extends Actor {
-    #ammoAmount = 20; // Hoeveelheid ammo die deze pickup geeft
-    #bobSpeed = 3; // Snelheid van de bob-animatie
-    #bobHeight = 5; // Hoogte van de bob-beweging
+    #ammoAmount;
+    #bobSpeed = 3; 
+    #bobHeight = 5; 
     #startY;
     #bobTimer = 0;
 
@@ -17,12 +17,13 @@ export class AmmoPickup extends Actor {
             color: Color.Orange,
             collisionType: CollisionType.Passive
         });
-          
+        
+        // Genereer random ammo tussen 20 en 35
+        this.#ammoAmount = Math.floor(Math.random() * (35 - 20 + 1)) + 20;
         this.#startY = y;
         console.log(`AmmoPickup created at (${x}, ${y}) with ${this.#ammoAmount} ammo`);
     }
 
-    // Getters voor read-only access
     get ammoAmount() {
         return this.#ammoAmount;
     }    onInitialize(engine) {

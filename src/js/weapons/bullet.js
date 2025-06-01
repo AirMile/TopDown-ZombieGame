@@ -7,7 +7,7 @@ export class Bullet extends Actor {
     #range = 800;
     #lifetime = 5000;
     
-    constructor(x, y, richting) {
+    constructor(x, y, direction) {
         super({ 
             x, 
             y, 
@@ -16,13 +16,11 @@ export class Bullet extends Actor {
             color: Color.Yellow,
             collisionType: CollisionType.Active
         });
-        this.vel = richting.normalize().scale(400);
+        this.vel = direction.normalize().scale(400);
         this.#startPos = new Vector(x, y);
-          
-        console.log(`Bullet created: direction=${richting.x.toFixed(2)},${richting.y.toFixed(2)}, vel=${this.vel.x.toFixed(2)},${this.vel.y.toFixed(2)}, range=${this.#range}, lifetime=${this.#lifetime}ms`);
     }
 
-    // Getters voor read-only access
+    // Alleen-lezen properties voor startpositie, bereik en levensduur
     get startPos() {
         return this.#startPos;
     }
@@ -33,50 +31,30 @@ export class Bullet extends Actor {
 
     get lifetime() {
         return this.#lifetime;
-    }onInitialize(engine) {
-        // Luister naar botsingen op deze bullet
+    }
+
+    onInitialize(engine) {
         this.on('collisionstart', (event) => {
-            // Krijg de werkelijke actor van de collider
-            const otherActor = event.other.owner;if (otherActor instanceof SlowZombie || otherActor instanceof FastZombie) {
-                // Bereken knockback richting op basis van bullet naar zombie positie
-                // Dit is betrouwbaarder dan bullet velocity omdat het altijd correct is
-                const bulletToZombie = otherActor.pos.sub(this.pos).normalize();
-                
-                // Debug: bereken ook bullet velocity richting voor vergelijking
-                const bulletDirection = this.vel.normalize();
-                
-                // Gebruik bullet-naar-zombie richting voor knockback
-                const knockbackDirection = bulletToZombie;
-                const knockbackStrength = 80; // Pas deze waarde aan voor meer/minder knockback
-                
-                // Debug: log alle relevante waarden                // console.log(`Bullet collision debug:`);
-                // console.log(`  Bullet vel direction: ${bulletDirection.x.toFixed(2)},${bulletDirection.y.toFixed(2)}`);
-                // console.log(`  Bullet->Zombie direction: ${bulletToZombie.x.toFixed(2)},${bulletToZombie.y.toFixed(2)}`);
-                // console.log(`  Using knockback direction: ${knockbackDirection.x.toFixed(2)},${knockbackDirection.y.toFixed(2)}`);
-                // console.log(`  Zombie pos: ${otherActor.pos.x.toFixed(2)},${otherActor.pos.y.toFixed(2)}`);
-                // console.log(`  Bullet pos: ${this.pos.x.toFixed(2)},${this.pos.y.toFixed(2)}`);
-                
-                // Pas knockback toe via zombie methode
+            const otherActor = event.other.owner;
+            if (otherActor instanceof SlowZombie || otherActor instanceof FastZombie) {
+                // Knockback richting: vector van bullet naar zombie
+                const knockbackDirection = otherActor.pos.sub(this.pos).normalize();
+                const knockbackStrength = 80;
                 otherActor.applyKnockback(knockbackDirection, knockbackStrength);
-                
-                // Geef schade
                 otherActor.takeDamage(10);
-                
-                // Vernietigt deze bullet
                 this.kill();
             }
         });
-    }    onPreUpdate(engine, delta) {
-        // Update levensduur
+    }
+
+    onPreUpdate(engine, delta) {
+        // Bullet verdwijnt als levensduur op is of buiten bereik is
         this.#lifetime -= delta;
-        if (this.#lifetime <= 0) {
+        const outOfLifetime = this.#lifetime <= 0;
+        const outOfRange = this.pos.distance(this.#startPos) > this.#range;
+        if (outOfLifetime || outOfRange) {
             this.kill();
             return;
-        }
-
-        // Controleer bereik
-        if (this.pos.distance(this.#startPos) > this.#range) {
-            this.kill();
         }
     }
 }

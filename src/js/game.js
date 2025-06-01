@@ -50,25 +50,20 @@ export class Game extends Engine {
     startNewGame() {
         this.gameState = 'PLAYING';
         this.clearGame();
-        this.resetGameState();
         this.startGame();
-    }      resetGameState() {
-        this.isGameOver = false;
-        
-        // Wis alle actors uit de scene
-        this.currentScene.clear();
-    }      clearGame() {
-        
+    }
+
+    clearGame() {
         // Verwijder alle actors uit huidige scene
         if (this.currentScene) {
             this.currentScene.clear();
         }
-        
+
         // Wis UI
         if (this.uiManager) {
             this.uiManager.clearAll();
         }
-        
+
         // Reset collision manager score
         if (this.collisionManager) {
             this.collisionManager.resetScore();
@@ -78,27 +73,36 @@ export class Game extends Engine {
         if (this.spawner) {
             this.spawner.stop();
         }
-          // Reset referenties
+
+        // Reset referenties
         this.player = null;
         this.spawner = null;
         this.collisionManager = null;
         this.background = null;
-          }    startGame() {
+        this.isGameOver = false;
+    }
+
+    // resetGameState verwijderd, functionaliteit zit nu in clearGame
+    startGame() {
         // Initialiseer achtergrond eerst (achter alles)
         this.initializeBackground();
-        
-        // Initialiseer systemen
+
+        // Groepeer alle systeem-initialisaties in één methode
+        this.initializeSystems();
+
+        this.setupCamera();
+        this.setupGameOverInput();
+        this.spawnInitialZombies();
+    }
+
+    initializeSystems() {
         this.initializePlayer();
         this.initializeSpawner();
         this.initializeUI();
         this.initializeCollisions();
-        this.setupCamera();
-          // Setup input handlers voor gameplay
-        this.setupGameOverInput();
-        
-        // Start het spel
-        this.spawnInitialZombies();
-    }initializePlayer() {
+    }
+
+    initializePlayer() {
         this.player = new Player();
         this.add(this.player);        
         // Schakel schieten in na de vertraging om onmiddellijk schieten te voorkomen bij starten met SPACE
@@ -106,7 +110,6 @@ export class Game extends Engine {
     }
 
     initializeBackground() {
-        // Maak een enorme map van 20000x20000 pixels voor veel ruimte om te bewegen
         const mapWidth = 20000;
         const mapHeight = 20000;
         
@@ -185,6 +188,7 @@ export class Game extends Engine {
         const isNewHighScore = this.highScoreManager.checkAndUpdateHighScore(finalScore);
         
 
+
         // Stop spawner
         if (this.spawner) {
             this.spawner.stop();
@@ -200,22 +204,17 @@ export class Game extends Engine {
         
     }
       killAllEntities() {
-        
         // Haal alle actors in de huidige scene op
         const allActors = this.currentScene.actors;
         const entityCount = allActors.length;
-        
-        
+
         // Vernietig alle actors (inclusief player, zombies, bullets)
         allActors.forEach(actor => {
             if (actor && typeof actor.kill === 'function') {
                 actor.kill();
             }
         });
-        
-        // Wis de scene volledig
-        this.currentScene.clear();
-        
+
     }    setupGameOverInput() {
         // Verwijder bestaande input handlers om conflicten te voorkomen
         this.input.keyboard.off('press');

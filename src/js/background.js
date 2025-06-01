@@ -8,7 +8,7 @@ export class Background extends Actor {
             pos: new Vector(mapWidth / 2, mapHeight / 2),
             width: mapWidth,
             height: mapHeight,
-            z: -100 // Zorg dat hij altijd achter alles staat
+            z: -100 
         });
         this.mapWidth = mapWidth;
         this.mapHeight = mapHeight;
@@ -27,7 +27,7 @@ export class Background extends Actor {
         
         if (!backgroundSprite) {
             return;
-        }        // Gebruik linksboven als anker voor tegelen
+        }       
         backgroundSprite.anchor = new Vector(0, 0);
 
 
@@ -41,25 +41,25 @@ export class Background extends Actor {
 
 
 
-        let tilesCreated = 0;        // Maak alle tiles als losse Actors
+        let tilesCreated = 0;        
         for (let x = 0; x < tilesX; x++) {
             for (let y = 0; y < tilesY; y++) {
-                // Bereken absolute positie (vanaf linksboven van de map)
+                // Bereken positie 
                 const tileX = (x * tileW) - (this.mapWidth / 2);
                 const tileY = (y * tileH) - (this.mapHeight / 2);
                 
                 // Maak een nieuwe tile actor
                 const tile = new Actor({
-                    pos: new Vector(tileX + (tileW / 2), tileY + (tileH / 2)), // Plaats op midden van tile
+                    pos: new Vector(tileX + (tileW / 2), tileY + (tileH / 2)), 
                     width: tileW,
                     height: tileH,
-                    anchor: new Vector(0.5, 0.5), // Anker op midden voor Actor
-                    z: -101 // Zorg dat deze altijd achter alle andere elementen staat
+                    anchor: new Vector(0.5, 0.5), 
+                    z: -101 
                 });
 
                 // Kloon de sprite en zet deze op de tile
                 const tileSprite = backgroundSprite.clone();
-                tileSprite.anchor = new Vector(0.5, 0.5); // Sprite anker op midden
+                tileSprite.anchor = new Vector(0.5, 0.5); 
                 tile.graphics.use(tileSprite);
 
                 // Voeg tile toe aan de scene
@@ -68,7 +68,7 @@ export class Background extends Actor {
             }
         }
 
-        // Zet deze container actor zelf onzichtbaar (we gebruiken alleen de tiles)
+        // Zet deze container actor zelf onzichtbaar 
         this.graphics.visible = false;
     }
 }

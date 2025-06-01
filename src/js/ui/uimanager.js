@@ -4,52 +4,60 @@ export class UIManager {
     constructor(engine) {
         this.engine = engine;
         this.elements = new Map();
-        this.healthFgRect = null; // Reference voor health bar Rectangle
-        this.healthBarConfig = null; // Config voor health bar dimensions
+        this.healthFgRect = null; 
+        this.healthBarConfig = null; 
+    }
+
+    /**
+     * Helper voor het aanmaken van een Label met standaardwaarden.
+     */
+    createLabel({ text, pos, size, color, align, anchor = new Vector(0, 0), z = 99, visible = true }) {
+        return new Label({
+            text,
+            pos,
+            font: new Font({
+                family: 'Arial',
+                size,
+                color,
+                textAlign: align
+            }),
+            anchor,
+            coordPlane: CoordPlane.Screen,
+            zIndex: z,
+            visible
+        });
     }
 
     // Maak ammo counter
     createAmmoCounter() {
-        const ammoLabel = new Label({
+        const ammoLabel = this.createLabel({
             text: "Ammo: 35/35 | Total: 250",
             pos: new Vector(this.engine.drawWidth - 20, 20),
-            font: new Font({
-                family: 'Arial',
-                size: 24,
-                color: Color.White,
-                textAlign: TextAlign.Right
-            }),
+            size: 24,
+            color: Color.White,
+            align: TextAlign.Right,
             anchor: new Vector(1, 0),
-            coordPlane: CoordPlane.Screen,
-            zIndex: 99
+            z: 99
         });
-        
         this.engine.add(ammoLabel);
         this.elements.set('ammo', ammoLabel);
-        
         return ammoLabel;
     }
 
     // Maak reload indicator
     createReloadIndicator() {
-        const reloadLabel = new Label({
+        const reloadLabel = this.createLabel({
             text: "RELOADING",
             pos: new Vector(this.engine.drawWidth / 2, this.engine.drawHeight / 2 + 100),
-            font: new Font({
-                family: 'Arial',
-                size: 36,
-                color: Color.Red,
-                textAlign: TextAlign.Center
-            }),
+            size: 36,
+            color: Color.Red,
+            align: TextAlign.Center,
             anchor: new Vector(0.5, 0.5),
-            coordPlane: CoordPlane.Screen,
-            zIndex: 100,
+            z: 100,
             visible: false
         });
-        
         this.engine.add(reloadLabel);
         this.elements.set('reload', reloadLabel);
-        
         return reloadLabel;
     }
 
@@ -115,25 +123,21 @@ export class UIManager {
 
     // Maak score weergave
     createScoreCounter() {
-        const scoreLabel = new Label({
+        const scoreLabel = this.createLabel({
             text: "Score: 0",
             pos: new Vector(20, 60),
-            font: new Font({
-                family: 'Arial',
-                size: 24,
-                color: Color.White,
-                textAlign: TextAlign.Left
-            }),
+            size: 24,
+            color: Color.White,
+            align: TextAlign.Left,
             anchor: new Vector(0, 0),
-            coordPlane: CoordPlane.Screen,
-            zIndex: 99
+            z: 99
         });
-        
         this.engine.add(scoreLabel);
         this.elements.set('score', scoreLabel);
-        
         return scoreLabel;
-    }    // Update ammo weergave
+    }
+
+    // Update ammo weergave
     updateAmmo(current, max, total = null) {
         const ammo = this.elements.get('ammo');
         if (ammo) {
@@ -159,11 +163,11 @@ export class UIManager {
     updateHealth(current, max) {
         if (!this.healthFgRect || !this.healthBarConfig) return;
         // Bereken health percentage
-        const healthPercent = Math.max(0, current / max);        // console.log(`Updating health bar: ${current}/${max} = ${(healthPercent * 100).toFixed(1)}%`);        // Update voorgrond breedte en kleur
+        const healthPercent = Math.max(0, current / max);        
         const newWidth = this.healthBarConfig.width * healthPercent;
         const healthColor = this.calculateHealthColor(healthPercent);
         this.healthFgRect.width = newWidth;
-        this.healthFgRect.color = healthColor;        // Geen tekstlabel meer
+        this.healthFgRect.color = healthColor;  
         
         // console.log(`Health bar updated: width=${newWidth.toFixed(1)}, color=${healthColor.toString()}`);
     }
@@ -186,9 +190,15 @@ export class UIManager {
         }
     }
 
+    /**
+     * Verwijdert een actor na een bepaalde tijd (ms).
+     */
+    removeAfter(actor, duration) {
+        setTimeout(() => this.engine.remove(actor), duration);
+    }
+
     // Maak reload feedback berichten
     createReloadFeedback(message, colorName = "White", duration = 1500) {
-        // Kleur mapping
         const colorMap = {
             "Red": Color.Red,
             "Green": Color.Green,
@@ -196,192 +206,148 @@ export class UIManager {
             "Orange": Color.Orange,
             "White": Color.White
         };
-
         const feedbackColor = colorMap[colorName] || Color.White;
-
-        const feedbackLabel = new Label({
+        const feedbackLabel = this.createLabel({
             text: message,
             pos: new Vector(this.engine.drawWidth / 2, this.engine.drawHeight / 2 + 150),
-            font: new Font({
-                family: 'Arial',
-                size: 32,
-                color: feedbackColor,
-                textAlign: TextAlign.Center
-            }),
+            size: 32,
+            color: feedbackColor,
+            align: TextAlign.Center,
             anchor: new Vector(0.5, 0.5),
-            coordPlane: CoordPlane.Screen,
-            zIndex: 150
+            z: 150
         });
-        
         this.engine.add(feedbackLabel);
-        
-        // Auto-remove after duration
-        setTimeout(() => {
-            this.engine.remove(feedbackLabel);
-        }, duration);
-          // console.log(`Reload feedback shown: "${message}" (${colorName}, ${duration}ms)`);
-        
+        this.removeAfter(feedbackLabel, duration);
         return feedbackLabel;
+    }
+
+    // Kleine helpers voor losse labels van het game over scherm
+    #createGameOverTitle() {
+        return this.createLabel({
+            text: "GAME OVER!",
+            pos: new Vector(this.engine.drawWidth / 2, this.engine.drawHeight / 2 - 120),
+            size: 72,
+            color: Color.Red,
+            align: TextAlign.Center,
+            anchor: new Vector(0.5, 0.5),
+            z: 200
+        });
+    }
+
+    #createGameOverScore(finalScore) {
+        return this.createLabel({
+            text: `Jouw Score: ${finalScore}`,
+            pos: new Vector(this.engine.drawWidth / 2, this.engine.drawHeight / 2 - 50),
+            size: 36,
+            color: Color.Yellow,
+            align: TextAlign.Center,
+            anchor: new Vector(0.5, 0.5),
+            z: 200
+        });
+    }
+
+    #createGameOverHighScore(highScore, isNewHighScore) {
+        const highScoreColor = isNewHighScore ? Color.fromRGB(255, 215, 0) : Color.fromRGB(150, 150, 150);
+        const highScoreText = isNewHighScore ? `🎉 NIEUWE HOOGSTE SCORE: ${highScore}! 🎉` : `Hoogste Score: ${highScore}`;
+        return this.createLabel({
+            text: highScoreText,
+            pos: new Vector(this.engine.drawWidth / 2, this.engine.drawHeight / 2 - 10),
+            size: isNewHighScore ? 28 : 24,
+            color: highScoreColor,
+            align: TextAlign.Center,
+            anchor: new Vector(0.5, 0.5),
+            z: 200
+        });
+    }
+
+    #createGameOverPlayAgain() {
+        return this.createLabel({
+            text: "Druk op SPATIE voor nieuw spel | ESC voor hoofdmenu",
+            pos: new Vector(this.engine.drawWidth / 2, this.engine.drawHeight / 2 + 50),
+            size: 24,
+            color: Color.White,
+            align: TextAlign.Center,
+            anchor: new Vector(0.5, 0.5),
+            z: 200
+        });
     }
 
     // Maak game over scherm
     createGameOverScreen(finalScore = 0, highScore = 0, isNewHighScore = false) {
-        // First clear all existing UI elements
         this.clearAll();
-        
+        const gameOverLabel = this.#createGameOverTitle();
+        const scoreLabel = this.#createGameOverScore(finalScore);
+        const highScoreLabel = this.#createGameOverHighScore(highScore, isNewHighScore);
+        const playAgainLabel = this.#createGameOverPlayAgain();
 
-          // Hoofdtitel game over
-        const gameOverLabel = new Label({
-            text: "GAME OVER!",
-            pos: new Vector(this.engine.drawWidth / 2, this.engine.drawHeight / 2 - 120),
-            font: new Font({
-                family: 'Arial',
-                size: 72,
-                color: Color.Red,
-                textAlign: TextAlign.Center
-            }),
-            anchor: new Vector(0.5, 0.5),
-            coordPlane: CoordPlane.Screen,
-            zIndex: 200        });
-        
-        // Score weergave
-        const scoreLabel = new Label({
-            text: `Jouw Score: ${finalScore}`,
-            pos: new Vector(this.engine.drawWidth / 2, this.engine.drawHeight / 2 - 50),
-            font: new Font({
-                family: 'Arial',
-                size: 36,
-                color: Color.Yellow,
-                textAlign: TextAlign.Center
-            }),
-            anchor: new Vector(0.5, 0.5),
-            coordPlane: CoordPlane.Screen,
-            zIndex: 200        });
-        
-        // High score weergave
-        const highScoreColor = isNewHighScore ? Color.fromRGB(255, 215, 0) : Color.fromRGB(150, 150, 150);
-        const highScoreText = isNewHighScore ? `🎉 NIEUWE HOOGSTE SCORE: ${highScore}! 🎉` : `Hoogste Score: ${highScore}`;
-        
-        const highScoreLabel = new Label({
-            text: highScoreText,
-            pos: new Vector(this.engine.drawWidth / 2, this.engine.drawHeight / 2 - 10),
-            font: new Font({
-                family: 'Arial',
-                size: isNewHighScore ? 28 : 24,
-                color: highScoreColor,
-                textAlign: TextAlign.Center
-            }),
-            anchor: new Vector(0.5, 0.5),
-            coordPlane: CoordPlane.Screen,
-            zIndex: 200        });
-        
-        // Speel opnieuw instructie
-        const playAgainLabel = new Label({
-            text: "Druk op SPATIE voor nieuw spel | ESC voor hoofdmenu",
-            pos: new Vector(this.engine.drawWidth / 2, this.engine.drawHeight / 2 + 50),
-            font: new Font({
-                family: 'Arial',
-                size: 24,
-                color: Color.White,
-                textAlign: TextAlign.Center
-            }),
-            anchor: new Vector(0.5, 0.5),
-            coordPlane: CoordPlane.Screen,
-            zIndex: 200
-        });
-        
         this.engine.add(gameOverLabel);
         this.engine.add(scoreLabel);
         this.engine.add(highScoreLabel);
         this.engine.add(playAgainLabel);
-        
+
         this.elements.set('gameOver', gameOverLabel);
         this.elements.set('gameOverScore', scoreLabel);
         this.elements.set('gameOverHighScore', highScoreLabel);
         this.elements.set('playAgain', playAgainLabel);
-          return gameOverLabel;
+
+        return gameOverLabel;
     }
 
     // Maak wave aankondiging
     createWaveAnnouncement(text, duration = 3000) {
-        const announcement = new Label({
-            text: text,
+        const announcement = this.createLabel({
+            text,
             pos: new Vector(this.engine.drawWidth / 2, 100),
-            font: new Font({
-                family: 'Arial',
-                size: 48,
-                color: Color.Yellow,
-                textAlign: TextAlign.Center
-            }),
+            size: 48,
+            color: Color.Yellow,
+            align: TextAlign.Center,
             anchor: new Vector(0.5, 0.5),
-            coordPlane: CoordPlane.Screen,
-            zIndex: 150
+            z: 150
         });
-        
         this.engine.add(announcement);
-        
-        // Auto-remove after duration
-        setTimeout(() => {
-            this.engine.remove(announcement);
-            
-        }, duration);
-        
-        
+        this.removeAfter(announcement, duration);
         return announcement;
     }
 
     // Maak hoofdmenu
     createMainMenu() {
-        // Main title
-        const titleLabel = new Label({
+        const titleLabel = this.createLabel({
             text: "ZOMBIE SHOOTER",
             pos: new Vector(this.engine.drawWidth / 2, this.engine.drawHeight / 2 - 100),
-            font: new Font({
-                family: 'Arial',
-                size: 64,
-                color: Color.White,
-                textAlign: TextAlign.Center
-            }),
+            size: 64,
+            color: Color.White,
+            align: TextAlign.Center,
             anchor: new Vector(0.5, 0.5),
-            coordPlane: CoordPlane.Screen,
-            zIndex: 200
+            z: 200
         });
-        
-        // Play instruction
-        const playLabel = new Label({
+        const playLabel = this.createLabel({
             text: "Press SPACE to Play Game",
             pos: new Vector(this.engine.drawWidth / 2, this.engine.drawHeight / 2),
-            font: new Font({
-                family: 'Arial',
-                size: 32,
-                color: Color.Green,
-                textAlign: TextAlign.Center
-            }),
+            size: 32,
+            color: Color.Green,
+            align: TextAlign.Center,
             anchor: new Vector(0.5, 0.5),
-            coordPlane: CoordPlane.Screen,
-            zIndex: 200        });        // Controls info - multiple lines for all features
-        const controlsLabel1 = new Label({
+            z: 200
+        });
+        const controlsLabel1 = this.createLabel({
             text: "WASD: Move | Shift + W: Sprint | Left/Right Arrow: Rotate | Space: Shoot | R: Reload",
             pos: new Vector(this.engine.drawWidth / 2, this.engine.drawHeight / 2 + 50),
-            font: new Font({
-                family: 'Arial',
-                size: 16,
-                color: Color.LightGray,
-                textAlign: TextAlign.Center
-            }),
+            size: 16,
+            color: Color.LightGray,
+            align: TextAlign.Center,
             anchor: new Vector(0.5, 0.5),
-            coordPlane: CoordPlane.Screen,
-            zIndex: 200
-        });        this.engine.add(titleLabel);
+            z: 200
+        });
+        this.engine.add(titleLabel);
         this.engine.add(playLabel);
         this.engine.add(controlsLabel1);
-        
         this.elements.set('menuTitle', titleLabel);
         this.elements.set('menuPlay', playLabel);
         this.elements.set('menuControls1', controlsLabel1);
-        
         return titleLabel;
-    }    // Verwijder alle UI elementen
+    }
+
+    // Verwijder alle UI elementen
     clearAll() {
 
         
@@ -390,8 +356,8 @@ export class UIManager {
             this.engine.remove(element);
         });
         
-        this.elements.clear();        this.healthBarConfig = null; // Reset health bar configuratie
-        this.healthFgRect = null; // Reset Rectangle referentie
+        this.elements.clear();        this.healthBarConfig = null; 
+        this.healthFgRect = null; 
 
     }
 
@@ -405,22 +371,14 @@ export class UIManager {
         return this.elements.has(name);
     }    // Helper method om kleur te berekenen op basis van health percentage
     calculateHealthColor(healthPercent) {
-        // Kleur interpolatie van groen (100%) naar rood (0%)
-        
+        // Interpoleert van groen (100%) naar rood (0%)
         if (healthPercent >= 1.0) {
-            return Color.Green; // Volledig groen bij 100%
+            return Color.Green;
         } else if (healthPercent <= 0.0) {
-            return Color.Red; // Volledig rood bij 0%
+            return Color.Red;
         }
-        
-        // Interpolatie tussen groen en rood
-        // Groen: RGB(0, 255, 0)
-        // Rood: RGB(255, 0, 0)
-        
         const red = Math.floor(255 * (1 - healthPercent));
         const green = Math.floor(255 * healthPercent);
-        const blue = 0;
-        
-        return Color.fromRGB(red, green, blue);
+        return Color.fromRGB(red, green, 0);
     }
 }

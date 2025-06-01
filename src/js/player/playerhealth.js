@@ -6,7 +6,7 @@ export class PlayerHealth {
     #currentHealth
     #isInvulnerable
     #invulnerabilityTime
-    #invulnerabilityTimer
+    #invulnerabilityTimer = 0
     #onDeathCallback
     #onHealthChangeCallback
 
@@ -16,14 +16,13 @@ export class PlayerHealth {
         this.#currentHealth = this.#maxHealth;
         this.#isInvulnerable = false;
         this.#invulnerabilityTime = PlayerConfig.INVULNERABILITY_TIME;
-        this.#invulnerabilityTimer = 0;
         this.#onDeathCallback = null;
         this.#onHealthChangeCallback = null;
         
-        // // console.log(`PlayerHealth initialized: ${this.#currentHealth}/${this.#maxHealth} HP`);
+        console.log(`PlayerHealth initialized: ${this.#currentHealth}/${this.#maxHealth} HP`);
     }
 
-    // Health functies
+    // Health methods
     getCurrentHealth() {
         return this.#currentHealth;
     }
@@ -36,7 +35,7 @@ export class PlayerHealth {
         return this.#currentHealth / this.#maxHealth;
     }
 
-    // Onkwetsbaarheid functies
+    // Invulnerability methods
     isInvulnerable() {
         return this.#isInvulnerable;
     }
@@ -45,7 +44,7 @@ export class PlayerHealth {
         return Math.max(0, this.#invulnerabilityTimer);
     }
 
-    // Callback instellingen
+    // Callback settings
     setOnDeathCallback(callback) {
         this.#onDeathCallback = callback;
     }
@@ -54,72 +53,82 @@ export class PlayerHealth {
         this.#onHealthChangeCallback = callback;
     }
 
-    // Update methode voor timers
+    // Update method for timers
     update(delta) {
         // Update invulnerability timer
         if (this.#isInvulnerable) {
             this.#invulnerabilityTimer -= delta;
             if (this.#invulnerabilityTimer <= 0) {
                 this.#isInvulnerable = false;
-                
-                // console.log('Player invulnerability ended');
+                console.log('Player invulnerability ended');
             }
         }
-    }    // Damage systeem
-    takeDamage(damage = 10, source = 'unknown') {
-        if (this.#isInvulnerable) {
-            // console.log(`Damage blocked: ${damage} from ${source} (invulnerable)`);
-            return false;
-        }
+    }
 
-        const oldHealth = this.#currentHealth;
-        this.#currentHealth -= damage;
-        
-        // Zorg dat health niet onder 0 gaat
-        if (this.#currentHealth < 0) {
-            this.#currentHealth = 0;
-        }
-
-        // Activeer onkwetsbaarheid
-        this.#isInvulnerable = true;
-        this.#invulnerabilityTimer = this.#invulnerabilityTime;
-        
-        // console.log(`Player took ${damage} damage from ${source}: health=${this.#currentHealth}/${this.#maxHealth} (was ${oldHealth})`);
-        
-        // Notificeer health verandering
+    // Helper for consistent health updates
+    #updateHealth(newHealth) {
+        this.#currentHealth = Math.max(0, Math.min(this.#maxHealth, newHealth));
         this.#notifyHealthChange();
-        
-        // Controleer op dood
         if (this.#currentHealth <= 0) {
             this.#handleDeath();
         }
+    }
 
-        return true; // Damage was toegepast
-    }    // Genezings systeem
-    heal(amount, source = 'unknown') {
-        if (this.#currentHealth >= this.#maxHealth) {
-            // console.log(`Heal blocked: already at max health (${this.#maxHealth})`);
+    // Helper for invulnerability activation
+    #activateInvulnerability() {
+        this.#isInvulnerable = true;
+        this.#invulnerabilityTimer = this.#invulnerabilityTime;
+        console.log(`Player invulnerability activated for ${this.#invulnerabilityTime}ms`);
+    }
+
+    // Damage system
+    takeDamage(damage = 10, source = 'unknown') {
+        if (this.#isInvulnerable) {
+            console.log(`Damage blocked: ${damage} from ${source} (invulnerable)`);
             return false;
         }
 
         const oldHealth = this.#currentHealth;
-        this.#currentHealth = Math.min(this.#maxHealth, this.#currentHealth + amount);
+        
+        this.#activateInvulnerability();
+        this.#updateHealth(this.#currentHealth - damage);
+        
+        console.log(`Player took ${damage} damage from ${source}: health=${this.#currentHealth}/${this.#maxHealth} (was ${oldHealth})`);
+
+        return true;
+    }
+
+    // Healing system
+    heal(amount, source = 'unknown') {
+        if (this.#currentHealth >= this.#maxHealth) {
+            console.log(`Heal blocked: already at max health (${this.#maxHealth})`);
+            return false;
+        }
+
+        const oldHealth = this.#currentHealth;
+        this.#updateHealth(this.#currentHealth + amount);
+        
         const actualHealing = this.#currentHealth - oldHealth;
-        
-        // console.log(`Player healed ${actualHealing} HP from ${source}: health=${this.#currentHealth}/${this.#maxHealth}`);
-        
-        // Notificeer health verandering
-        this.#notifyHealthChange();
+        console.log(`Player healed ${actualHealing} HP from ${source}: health=${this.#currentHealth}/${this.#maxHealth}`);
 
-        return true; // Genezing was toegepast
+        return true;
     }
 
-    // Volledige genezing
+    // Full healing
     fullHeal() {
-        return this.heal(this.#maxHealth, 'full heal');
+        if (this.#currentHealth === this.#maxHealth) {
+            console.log('Full heal blocked: already at max health');
+            return false;
+        }
+        
+        const oldHealth = this.#currentHealth;
+        this.#updateHealth(this.#maxHealth);
+        
+        console.log(`Player fully healed: health=${this.#currentHealth}/${this.#maxHealth} (was ${oldHealth})`);
+        return true;
     }
 
-    // Health status controles
+    // Health status checks
     isDead() {
         return this.#currentHealth <= 0;
     }
@@ -133,12 +142,12 @@ export class PlayerHealth {
     }
 
     isCriticalHealth(threshold = 0.1) {
-        return this.getHealthPercentage() <= threshold;
+        return this.isAtLowHealth(threshold);
     }
 
-    // Dood afhandeling
+    // Death handling
     #handleDeath() {
-        // console.log(`Player died: health=${this.#currentHealth}, calling death callback`);
+        console.log(`Player died: health=${this.#currentHealth}, calling death callback`);
         
         if (this.#onDeathCallback) {
             this.#onDeathCallback();
@@ -150,31 +159,30 @@ export class PlayerHealth {
         if (this.#onHealthChangeCallback) {
             this.#onHealthChangeCallback(this.#currentHealth, this.#maxHealth);
         }
-    }    // Max health aanpassing (voor power-ups)
+    }
+
+    // Max health adjustment (for power-ups)
     increaseMaxHealth(amount) {
         const oldMaxHealth = this.#maxHealth;
         this.#maxHealth += amount;
         
-        // Genees de player ook met hetzelfde bedrag
-        this.#currentHealth += amount;
+        this.#updateHealth(this.#currentHealth + amount);
         
-        // console.log(`Max health increased by ${amount}: ${oldMaxHealth} -> ${this.#maxHealth}`);
-        
-        this.#notifyHealthChange();
+        console.log(`Max health increased by ${amount}: ${oldMaxHealth} -> ${this.#maxHealth}`);
     }
 
-    // Reset health systeem
+    // Reset health system
     reset() {
-        this.#currentHealth = this.#maxHealth;
         this.#isInvulnerable = false;
         this.#invulnerabilityTimer = 0;
         
-        // console.log('Player health system reset');
+        // Update health via helper
+        this.#updateHealth(this.#maxHealth);
         
-        this.#notifyHealthChange();
+        console.log('Player health system reset');
     }
 
-    // Debug methodes
+    // Debug methods
     getDebugInfo() {
         return {
             currentHealth: this.#currentHealth,
@@ -189,15 +197,11 @@ export class PlayerHealth {
         };
     }
 
-    // Forceer health instelling (voor testen/debugging)
+    // Force health setting (for testing/debugging)
     setHealth(health) {
-        this.#currentHealth = Math.max(0, Math.min(this.#maxHealth, health));
-        this.#notifyHealthChange();
+        // Update health via helper
+        this.#updateHealth(health);
         
-        if (this.#currentHealth <= 0) {
-            this.#handleDeath();
-        }
-        
-        // console.log(`Health force-set to: ${this.#currentHealth}/${this.#maxHealth}`);
+        console.log(`Health force-set to: ${this.#currentHealth}/${this.#maxHealth}`);
     }
 }

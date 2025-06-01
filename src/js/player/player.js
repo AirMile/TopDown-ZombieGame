@@ -11,13 +11,13 @@ export class Player extends Actor {
     #maxHealth = 100;
     #currentHealth = this.#maxHealth;
     #isInvulnerable = false;
-    #invulnerabilityTime = 1000; // 1 seconde
+    #invulnerabilityTime = 1000; 
     #invulnerabilityTimer = 0;
     #shootingEnabled = false;
-    #shootingDelayTime = 500; // 500ms vertraging voordat schieten mogelijk is
+    #shootingDelayTime = 500; 
     #shootingDelayTimer = 0;
     #isShooting = false;
-    #shootingAnimationDuration = 150; // 150ms duur van de schietanimatie
+    #shootingAnimationDuration = 150; 
     #shootingAnimationTimer = 0;
 
     constructor() {
@@ -38,14 +38,9 @@ export class Player extends Actor {
         
         this.shootingSprite = Resources.Shooting.toSprite();
         if (this.shootingSprite) {
-            this.shootingSprite.scale = new Vector(2.2, 2.2); // Veel grotere schaal voor de shooting sprite
-            this.shootingSprite.rotation = 0; // 90 graden naar rechts ten opzichte van de normale sprite (-PI/2 + PI/2 = 0)
-            this.shootingSprite.offset = new Vector(0, 0); // Verschuiving naar links met 0.1
-        }
-        
-        // Begin met de normale sprite
-        if (this.normalSprite) {
-            this.graphics.use(this.normalSprite);
+            this.shootingSprite.scale = new Vector(2.2, 2.2); 
+            this.shootingSprite.rotation = 0; 
+            this.shootingSprite.offset = new Vector(0, 0); 
         }
         
         // Begin met de normale sprite
@@ -91,26 +86,30 @@ export class Player extends Actor {
     }
 
     onInitialize(engine) {        // Stel een betere collider in voor de speler (groter voor betere botsingsdetectie)
-        const colliderWidth = 10;  // Veel groter horizontaal voor betere dekking
-        const colliderHeight = 10; // Veel groter verticaal voor betere dekking
+        const colliderWidth = 10;  
+        const colliderHeight = 10; 
         
         // Positioneer de collider iets meer op het lichaam
-        const offsetX = 2;    // Horizontaal gecentreerd
-        const offsetY = 1.25;   // Iets naar boven verschoven naar het lichaams-/borstgebied
-          const boxShape = Shape.Box(colliderWidth, colliderHeight, vec(offsetX, offsetY));
+        const offsetX = 2;    
+        const offsetY = 1.25;   
+        const boxShape = Shape.Box(colliderWidth, colliderHeight, vec(offsetX, offsetY));
         this.collider.set(boxShape);
         
-        // BELANGRIJK: Schakel rotatie in voor de collider zodat deze meedraait
+        // Alleen collider.useBoxCollision is meestal voldoende
         this.collider.useBoxCollision = true;
-        this.body.useBoxCollision = true;          // Extra debug: log de werkelijke collider grenzen
-          // Maak collider zichtbaar voor debug (zodat je kunt zien dat deze meedraait)
-        this.graphics.showDebug = true;        // Stel input handlers in
-        engine.input.keyboard.on('press', (evt) => {
-            // R-toets voor handmatig herladen - VERBETERDE VERSIE
-            if (evt.key === Keys.R) {
-                this.handleReloadInput();
-            }
-        });    }    // Nieuwe methode voor het afhandelen van herladen
+
+        this.graphics.showDebug = true;
+
+        // Controleer of de reload-listener al is toegevoegd
+        if (!engine.input.keyboard._playerReloadListenerAdded) {
+            engine.input.keyboard.on('press', (evt) => {
+                if (evt.key === Keys.R) {
+                    this.handleReloadInput();
+                }
+            });
+            engine.input.keyboard._playerReloadListenerAdded = true;
+        }
+    }    
     handleReloadInput() {
         if (!this.weapon) {
             return;
@@ -120,16 +119,10 @@ export class Player extends Actor {
         const uiManager = this.scene?.engine?.uiManager;
           // Controleer of herladen mogelijk is
         if (this.weapon.reloading) {
-            if (uiManager) {
-                uiManager.createReloadFeedback("Already Reloading!", "Orange");
-            }
             return;
         }
         
         if (this.weapon.getCurrentAmmo() >= this.weapon.maxBullets) {
-            if (uiManager) {
-                uiManager.createReloadFeedback("Magazine Full!", "Yellow");
-            }
             return;
         }
         
@@ -152,7 +145,7 @@ export class Player extends Actor {
             }
         }
     }    onPreUpdate(engine, delta) {        
-        // Update onkwetsbaarheidstimer
+        // Update invulnerabilityTimer
         if (this.#isInvulnerable) {
             this.#invulnerabilityTimer -= delta;
             if (this.#invulnerabilityTimer <= 0) {
@@ -160,7 +153,7 @@ export class Player extends Actor {
             }
         }
         
-        // Update schietanimatietimer
+        // Update shootingAnimationTimer
         if (this.#isShooting) {
             this.#shootingAnimationTimer -= delta;
             if (this.#shootingAnimationTimer <= 0) {
@@ -206,7 +199,7 @@ export class Player extends Actor {
         this.#isInvulnerable = true;
         this.#invulnerabilityTimer = this.#invulnerabilityTime;
           
-        console.log(`Player took damage: ${damage}, health=${this.#currentHealth}/${this.#maxHealth}`);
+        // console.log(`Player took damage: ${damage}, health=${this.#currentHealth}/${this.#maxHealth}`);
         
         // Update UI indien beschikbaar
         if (this.scene?.engine?.uiManager) {
@@ -217,7 +210,7 @@ export class Player extends Actor {
         if (this.#currentHealth <= 0) {
             this.#currentHealth = 0;
               
-            console.log(`Player died: health=${this.#currentHealth}`);
+            // console.log(`Player died: health=${this.#currentHealth}`);
             
             this.handleDeath();
         }
@@ -239,7 +232,7 @@ export class Player extends Actor {
         return this.#currentHealth / this.#maxHealth;
     }
 
-    // Genees de speler
+    // Heal de speler
     heal(amount) {
         const oldHealth = this.#currentHealth;
         this.#currentHealth = Math.min(this.#maxHealth, this.#currentHealth + amount);        
@@ -257,7 +250,7 @@ export class Player extends Actor {
             this.#shootingAnimationTimer = this.#shootingAnimationDuration;
             this.graphics.use(this.shootingSprite);
               
-            console.log(`Player shooting animation started: duration=${this.#shootingAnimationDuration}ms`);
+            // console.log(`Player shooting animation started: duration=${this.#shootingAnimationDuration}ms`);
         }
     }
     
@@ -268,7 +261,7 @@ export class Player extends Actor {
             this.#shootingAnimationTimer = 0;
             this.graphics.use(this.normalSprite);
               
-            console.log(`Player shooting animation stopped: returning to normal sprite`);
+            // console.log(`Player shooting animation stopped: returning to normal sprite`);
         }
     }
 }
