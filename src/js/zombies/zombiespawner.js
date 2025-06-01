@@ -213,7 +213,7 @@ export class ZombieSpawner {
         // console.log(`Spawned zombie: type=${type}, x=${position.x.toFixed(1)}, y=${position.y.toFixed(1)}`);
     }
 
-    // Factory methode voor het maken van zombies (behouden voor compatibiliteit)
+    // Factory methode voor het maken van zombies 
     createZombie(type) {
         switch (type) {
             case 'slow':
