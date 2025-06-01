@@ -17,10 +17,10 @@ export const GameConfig = {
     WORLD_HEIGHT: 20000,
     
     // Camera instellingen
-    CAMERA_ROTATION_OFFSET: Math.PI / 2 + Math.PI, // 180 graden offset van player
+    CAMERA_ROTATION_OFFSET: Math.PI / 2 + Math.PI, // 180 graden
     
     // Game timing
-    SHOOTING_DELAY_TIME: 500, // ms vertraging voordat schieten wordt ingeschakeld na game start
+    SHOOTING_DELAY_TIME: 500, 
     
     // Debug instellingen
     SHOW_DEBUG_GRAPHICS: true

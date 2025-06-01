@@ -17,7 +17,7 @@ export const UIConfig = {
         FONT_SIZE: 24,
         FONT_FAMILY: 'Arial',
         COLOR: 'White',
-        X_OFFSET: 20, // Distance from right edge
+        X_OFFSET: 20, 
         Y: 20,
         Z_INDEX: 99
     },
@@ -42,11 +42,11 @@ export const UIConfig = {
     
     // Reload feedback instellingen
     RELOAD_FEEDBACK: {
-        DEFAULT_DURATION: 1500, // ms
-        RELOAD_DURATION: 2500, // ms for actual reload feedback
+        DEFAULT_DURATION: 1500, 
+        RELOAD_DURATION: 2500, 
         FONT_SIZE: 24,
         FONT_FAMILY: 'Arial',
-        Y_OFFSET: 100, // Distance below center
+        Y_OFFSET: 100, 
         Z_INDEX: 101,
         COLORS: {
             GREEN: 'Green',
@@ -59,7 +59,7 @@ export const UIConfig = {
     
     // Ammo kleur drempelwaarden
     AMMO_COLOR_THRESHOLDS: {
-        HIGH: 100, // Above this = white
-        MEDIUM: 50 // Between medium and high = yellow, below medium = red
+        HIGH: 100, 
+        MEDIUM: 50 
     }
 };
