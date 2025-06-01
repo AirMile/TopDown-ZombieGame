@@ -72,10 +72,10 @@ export class ZombieSpawner {
 
         this.#difficulty += this.#difficultyIncreaseRate;
         
-        // Bereken nieuwe spawn interval (sneller dan voorheen)
+        // Bereken nieuwe spawn interval 
         this.#spawnInterval = Math.max(this.#minSpawnInterval, 1500 / this.#difficulty);
         
-        // Update fast zombie kans (sneller stijgend)
+        // Update fast zombie kans 
         this.#fastZombieChance = Math.min(0.85, 0.3 + (this.#difficulty - 1) * 0.12);
         // console.log(`Difficulty increased: oldDifficulty=${oldDifficulty.toFixed(2)}, newDifficulty=${this.#difficulty.toFixed(2)}, oldSpawnInterval=${oldSpawnInterval.toFixed(0)}, newSpawnInterval=${this.#spawnInterval.toFixed(0)}, oldFastZombieChance=${oldFastZombieChance.toFixed(2)}, newFastZombieChance=${this.#fastZombieChance.toFixed(2)}`);
     }
@@ -86,7 +86,7 @@ export class ZombieSpawner {
             // console.log("Player not found, skipping zombie wave.");
             return;
         }
-        // Bereken aantal zombies voor deze wave (meer agressief)
+        // Bereken aantal zombies voor deze wave 
         const baseZombies = 1 + Math.floor((this.#difficulty - 1) * 1.2); // Meer zombies per difficulty level
         const totalZombies = Math.min(6, baseZombies); // Limiet op 6 zombies per wave
         // Kies willekeurig spawn patroon
@@ -102,7 +102,7 @@ export class ZombieSpawner {
         for (const actor of this.#engine.currentScene.actors) {
             if (actor.tags?.has('player')) return actor;
             if (actor instanceof Player) return actor;
-            // Check voor player eigenschappen (aangepast voor refactored player)
+            // Check voor player eigenschappen 
             if (actor.movement && actor.currentHealth !== undefined && actor.getCurrentAmmo !== undefined) return actor;
         }
         // console.log("Player not found by any method in findPlayer.");
@@ -180,7 +180,7 @@ export class ZombieSpawner {
     }
 
     spawnCirclePattern(basePosition, count) {
-        const radius = 60; // 60px radius
+        const radius = 60;
         // console.log(`Spawning circle pattern: count=${count}, baseX=${basePosition.x.toFixed(1)}, baseY=${basePosition.y.toFixed(1)}, radius=${radius}`);
         
         for (let i = 0; i < count; i++) {
@@ -194,7 +194,7 @@ export class ZombieSpawner {
     }
 
     spawnClusterPattern(basePosition, count) {
-        const maxSpread = 80; // 80px maximale spreiding
+        const maxSpread = 80; 
         // console.log(`Spawning cluster pattern: count=${count}, baseX=${basePosition.x.toFixed(1)}, baseY=${basePosition.y.toFixed(1)}, maxSpread=${maxSpread}`);
         
         for (let i = 0; i < count; i++) {
@@ -223,14 +223,5 @@ export class ZombieSpawner {
             default:
                 return new SlowZombie();
         }
-    }
-
-    // Legacy methode voor compatibiliteit (wordt niet meer gebruikt in continuous systeem)
-    spawnZombieAt(type, x, y) {
-        const zombie = this.createZombie(type);
-        zombie.pos = new Vector(x, y);
-        this.#engine.add(zombie);
-        // console.log(`Legacy spawnZombieAt called: type=${type}, x=${x}, y=${y}`);
-        return zombie;
     }
 }
