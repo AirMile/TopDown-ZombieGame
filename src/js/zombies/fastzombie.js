@@ -11,20 +11,19 @@ export class FastZombie extends Zombie {
             height: 24,
             collisionType: CollisionType.Active // Make zombie collidable
         });
-        this.movementSpeed = 100; // Langzame zombies bewegen langzamer
-        // Zombie properties
+        this.movementSpeed = 100; // Langzame zombies bewegen langzamer        // Zombie eigenschappen
         this.damage = 25; // Fast zombies deal more damage
         this.maxHealth = 10; // Fast zombies have 10 health
-        this.health = this.maxHealth;        // Damage cooldown system
+        this.health = this.maxHealth;        // Damage cooldown systeem
         this.damageTimer = 0; // Timer voor damage cooldown
         this.damageCooldown = 500; // 0.5 seconds in milliseconds
-        this.initializationDelay = 1000; // 1 second delay before damage can be applied        // Kies random sprite
+        this.initializationDelay = 1000; // 1 second delay before damage can be applied        // Kies willekeurige sprite
         const fastSprites = [
             Resources.FastZombie1,
             Resources.FastZombie2,
             Resources.FastZombie3,
             Resources.FastZombie4
-        ];        const spriteIndex = Math.floor(Math.random() * fastSprites.length);
+        ];const spriteIndex = Math.floor(Math.random() * fastSprites.length);
         const sprite = fastSprites[spriteIndex].toSprite();
         sprite.scale = new Vector(0.5, 0.5); // Scale sprite to 50%
         sprite.tint = Color.fromRGB(255, 80, 80); // Roodachtige tint op sprite zelf!
@@ -36,7 +35,7 @@ export class FastZombie extends Zombie {
     }    onPreUpdate(engine, delta) {
         super.onPreUpdate(engine, delta);
         
-        // Update initialization delay
+        // Update initialisatie vertraging
         if (this.initializationDelay > 0) {
             this.initializationDelay -= delta;
         }
@@ -51,32 +50,31 @@ export class FastZombie extends Zombie {
             const rotationDegrees = (this.rotation * 180 / Math.PI).toFixed(1);
         }
         
-        // Only check for collision after initialization delay
+        // Controleer alleen op collision na initialisatie vertraging
         if (this.initializationDelay <= 0) {
             this.checkPlayerCollision(engine, delta);
         } else if (this.initializationDelay <= 900) { // Log once when almost ready
         }
-    }
-      checkPlayerCollision(engine, delta) {
-        // Find player in the scene using the same method as base zombie class
+    }      checkPlayerCollision(engine, delta) {
+        // Zoek player in de scene met dezelfde methode als base zombie class
         const player = engine.currentScene.actors.find(actor => actor instanceof Player);
         
         if (!player) return;
         
-        // Make sure collision bodies are initialized
+        // Controleer of collision bodies geïnitialiseerd zijn
         if (!this.collider || !player.collider) return;
         
-        // Check if zombie and player collision bodies are overlapping
+        // Controleer of zombie en player collision bodies overlappen
         const zombieBody = this.collider.bounds;
         const playerBody = player.collider.bounds;
         
         const isCurrentlyColliding = zombieBody.overlaps(playerBody);
         
         if (isCurrentlyColliding) {
-            // We are colliding with player
+            // We zijn aan het botsen met player
             if (this.damageTimer <= 0) {
 
-                // Apply damage to player
+                // Breng damage toe aan player
                 player.takeHit(this.damage);
                 
                 // Reset damage timer
@@ -84,7 +82,7 @@ export class FastZombie extends Zombie {
 
             }
         }    }    onInitialize(engine) {
-        super.onInitialize(engine); // Call base class onInitialize        
+        super.onInitialize(engine); // Roep base class onInitialize aan        
         
         // Vergroot collider naar schouder-breedte (veel breder voor échte schouder-tot-schouder)
         const colliderWidth = 80;  // Veel breder voor schouder-tot-schouder

@@ -30,9 +30,7 @@ export class HighScoreManager {
 
             return false;
         }
-    }
-
-    // Check of score een nieuwe hoogste score is en sla op indien nodig
+    }    // Controleer of score een nieuwe hoogste score is en sla op indien nodig
     checkAndUpdateHighScore(newScore) {
 
 
@@ -51,9 +49,7 @@ export class HighScoreManager {
 
             return false; // Geen nieuwe hoogste score
         }
-    }
-
-    // Get huidige hoogste score
+    }    // Verkrijg huidige hoogste score
     getHighScore() {
         return this.highScore;
     }
@@ -69,9 +65,7 @@ export class HighScoreManager {
 
             return false;
         }
-    }
-
-    // Get score statistieken voor display
+    }    // Verkrijg score statistieken voor weergave
     getScoreStats(currentScore) {
         return {
             currentScore: currentScore,

@@ -27,9 +27,7 @@ export class Background extends Actor {
         
         if (!backgroundSprite) {
             return;
-        }
-
-        // Gebruik linksboven als anchor voor tegelen
+        }        // Gebruik linksboven als anker voor tegelen
         backgroundSprite.anchor = new Vector(0, 0);
 
 
@@ -43,9 +41,7 @@ export class Background extends Actor {
 
 
 
-        let tilesCreated = 0;
-
-        // Maak alle tiles als losse Actors
+        let tilesCreated = 0;        // Maak alle tiles als losse Actors
         for (let x = 0; x < tilesX; x++) {
             for (let y = 0; y < tilesY; y++) {
                 // Bereken absolute positie (vanaf linksboven van de map)
@@ -57,13 +53,13 @@ export class Background extends Actor {
                     pos: new Vector(tileX + (tileW / 2), tileY + (tileH / 2)), // Plaats op midden van tile
                     width: tileW,
                     height: tileH,
-                    anchor: new Vector(0.5, 0.5), // Anchor op midden voor Actor
+                    anchor: new Vector(0.5, 0.5), // Anker op midden voor Actor
                     z: -101 // Zorg dat deze altijd achter alle andere elementen staat
                 });
 
-                // Clone de sprite en zet deze op de tile
+                // Kloon de sprite en zet deze op de tile
                 const tileSprite = backgroundSprite.clone();
-                tileSprite.anchor = new Vector(0.5, 0.5); // Sprite anchor op midden
+                tileSprite.anchor = new Vector(0.5, 0.5); // Sprite anker op midden
                 tile.graphics.use(tileSprite);
 
                 // Voeg tile toe aan de scene

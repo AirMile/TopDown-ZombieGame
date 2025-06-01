@@ -7,7 +7,7 @@ export class PlayerMovement {
         this.player = player;
         
     }    update(delta) {
-        // Movement update logic
+        // Beweging update logica
     }
 
     calculateVelocity(speed, strafe) {

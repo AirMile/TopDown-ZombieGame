@@ -3,7 +3,7 @@ import { Keys } from "excalibur";
 export class PlayerInput {    constructor(player) {
         this.player = player;
     }    update(engine, delta) {
-        // Input handling voor movement
+        // Input behandeling voor beweging
     }getMovementInput(engine) {
         const baseSpeed = this.player.movement.baseSpeed;
         let speed = 0;

@@ -6,7 +6,7 @@ import { Player } from "../player/player.js";
 export class ZombieSpawner {
     constructor(engine) {
         this.engine = engine;
-          // Continuous spawning configuration (veel agressiever gemaakt)
+          // Continuous spawning configuratie (veel agressiever gemaakt)
         this.spawnInterval = 1500; // Start waarde: 1.5 seconden (was 2 seconden)
         this.minSpawnInterval = 300; // Minimale spawn interval (was 500ms)
         this.difficulty = 1; // Start moeilijkheidsgraad
@@ -18,7 +18,7 @@ export class ZombieSpawner {
         this.difficultyTimer = 0;
         this.difficultyIncreaseInterval = 7000; // 7 seconden (was 10 seconden)
         
-        // Status
+        // Statussen
         this.isActive = false;
     }
 
@@ -30,12 +30,10 @@ export class ZombieSpawner {
 
     stop() {
         this.isActive = false;
-    }
-
-    update(delta) {
+    }    update(delta) {
         if (!this.isActive) return;
 
-        // Update difficulty timer
+        // Update moeilijkheidsgraad timer
         this.difficultyTimer += delta;
         if (this.difficultyTimer >= this.difficultyIncreaseInterval) {
             this.increaseDifficulty();
@@ -48,7 +46,7 @@ export class ZombieSpawner {
             this.spawnZombieWave();
             this.spawnTimer = 0;
         }
-    }    increaseDifficulty() {
+    }increaseDifficulty() {
         this.difficulty += this.difficultyIncreaseRate;
         
         // Bereken nieuwe spawn interval (sneller dan voorheen)
@@ -62,12 +60,10 @@ export class ZombieSpawner {
     spawnZombieWave() {
         const player = this.findPlayer();
         if (!player) {
-            return;
-        }        // Bereken aantal zombies voor deze wave (meer agressief)
+            return;        }        // Bereken aantal zombies voor deze wave (meer agressief)
         const baseZombies = 1 + Math.floor((this.difficulty - 1) * 1.2); // Meer zombies per difficulty level
-        const totalZombies = Math.min(6, baseZombies); // Cap op 6 zombies per wave
-        
-        // Kies random spawn patroon
+        const totalZombies = Math.min(6, baseZombies); // Limiet op 6 zombies per wave
+          // Kies willekeurig spawn patroon
         const patterns = ['single', 'line', 'circle', 'cluster'];
         const selectedPattern = patterns[Math.floor(Math.random() * patterns.length)];
         
@@ -98,14 +94,12 @@ export class ZombieSpawner {
         }
 
         return null;
-    }
-
-    calculateSpawnPosition(player) {
+    }    calculateSpawnPosition(player) {
         const screenWidth = this.engine.drawWidth;
         const screenHeight = this.engine.drawHeight;
         const spawnDistance = this.spawnDistanceFromScreen;
         
-        // Kies random kant van het scherm (0 = boven, 1 = rechts, 2 = onder, 3 = links)
+        // Kies willekeurige kant van het scherm (0 = boven, 1 = rechts, 2 = onder, 3 = links)
         const side = Math.floor(Math.random() * 4);
         
         let spawnX, spawnY;
@@ -154,10 +148,8 @@ export class ZombieSpawner {
     spawnSingleZombie(position) {
         const zombieType = Math.random() < this.fastZombieChance ? 'fast' : 'slow';
         this.createAndAddZombie(zombieType, position);
-    }
-
-    spawnLinePattern(basePosition, count) {
-        const spacing = 40; // 40px spacing tussen zombies
+    }    spawnLinePattern(basePosition, count) {
+        const spacing = 40; // 40px afstand tussen zombies
         const startOffset = -(count - 1) * spacing / 2;
         
         for (let i = 0; i < count; i++) {
@@ -179,10 +171,8 @@ export class ZombieSpawner {
             const zombieType = Math.random() < this.fastZombieChance ? 'fast' : 'slow';
             this.createAndAddZombie(zombieType, position);
         }
-    }
-
-    spawnClusterPattern(basePosition, count) {
-        const maxSpread = 80; // 80px max spread
+    }    spawnClusterPattern(basePosition, count) {
+        const maxSpread = 80; // 80px maximale spreiding
         
         for (let i = 0; i < count; i++) {
             const randomX = basePosition.x + (Math.random() - 0.5) * maxSpread;
@@ -198,9 +188,7 @@ export class ZombieSpawner {
         zombie.pos = position;
         this.engine.add(zombie);
         
-    }
-
-    // Factory method voor het maken van zombies (behouden voor compatibiliteit)
+    }    // Factory methode voor het maken van zombies (behouden voor compatibiliteit)
     createZombie(type) {
         switch (type) {
             case 'slow':
@@ -212,7 +200,7 @@ export class ZombieSpawner {
         }
     }
 
-    // Legacy method voor compatibiliteit (wordt niet meer gebruikt in continuous systeem)
+    // Legacy methode voor compatibiliteit (wordt niet meer gebruikt in continuous systeem)
     spawnZombieAt(type, x, y) {
         const zombie = this.createZombie(type);
         zombie.pos = new Vector(x, y);

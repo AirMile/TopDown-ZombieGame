@@ -10,19 +10,17 @@ export class SlowZombie extends Zombie {
             width: 24, // even smaller for better scaling
             height: 24,
             collisionType: CollisionType.Active // Make zombie collidable
-        });        
-
-        // Zombie properties
+        });            // Zombie eigenschappen
         this.damage = 15; // Slow zombies deal moderate damage
         this.maxHealth = 30; // Slow zombies have 30 health
-        this.health = this.maxHealth;        // Damage cooldown system
+        this.health = this.maxHealth;        // Damage cooldown systeem
         this.damageTimer = 0; // Timer voor damage cooldown
         this.damageCooldown = 500; // 0.5 seconds in milliseconds
-        this.initializationDelay = 1000; // 1 second delay before damage can be applied        // Kies random sprite
+        this.initializationDelay = 1000; // 1 second delay before damage can be applied        // Kies willekeurige sprite
         const slowSprites = [
             Resources.SlowZombie1,
             Resources.SlowZombie2
-        ];        const spriteIndex = Math.floor(Math.random() * slowSprites.length);
+        ];const spriteIndex = Math.floor(Math.random() * slowSprites.length);
         const sprite = slowSprites[spriteIndex].toSprite();
         sprite.scale = new Vector(0.5, 0.5); // Scale sprite to 50%        sprite.tint = Color.fromRGB(100, 200, 255); // Lichtblauw tint op sprite zelf!
         this.graphics.use(sprite);
@@ -30,7 +28,7 @@ export class SlowZombie extends Zombie {
     }onPreUpdate(engine, delta) {
         super.onPreUpdate(engine, delta);
         
-        // Update initialization delay
+        // Update initialisatie vertraging
         if (this.initializationDelay > 0) {
             this.initializationDelay -= delta;
         }
@@ -45,32 +43,31 @@ export class SlowZombie extends Zombie {
             const rotationDegrees = (this.rotation * 180 / Math.PI).toFixed(1);
         }
         
-        // Only check for collision after initialization delay
+        // Controleer alleen op collision na initialisatie vertraging
         if (this.initializationDelay <= 0) {
             this.checkPlayerCollision(engine, delta);
-        } 
-    }
-      checkPlayerCollision(engine, delta) {
-        // Find player in the scene using the same method as base zombie class
+        }
+    }      checkPlayerCollision(engine, delta) {
+        // Zoek player in de scene met dezelfde methode als base zombie class
         const player = engine.currentScene.actors.find(actor => actor instanceof Player);
         
         if (!player) return;
         
-        // Make sure collision bodies are initialized
+        // Controleer of collision bodies geïnitialiseerd zijn
         if (!this.collider || !player.collider) return;
         
-        // Check if zombie and player collision bodies are overlapping
+        // Controleer of zombie en player collision bodies overlappen
         const zombieBody = this.collider.bounds;
         const playerBody = player.collider.bounds;
         
         const isCurrentlyColliding = zombieBody.overlaps(playerBody);
         
         if (isCurrentlyColliding) {
-            // We are colliding with player
+            // We zijn aan het botsen met player
             if (this.damageTimer <= 0) {
 
             
-                // Apply damage to player
+                // Breng damage toe aan player
                 player.takeHit(this.damage);
                 
                 // Reset damage timer
@@ -79,7 +76,7 @@ export class SlowZombie extends Zombie {
             }
         }
     }    onInitialize(engine) {
-        super.onInitialize(engine); // Call base class onInitialize        
+        super.onInitialize(engine); // Roep base class onInitialize aan        
         
         // Vergroot collider naar schouder-breedte (veel breder voor échte schouder-tot-schouder)
         const colliderWidth = 80;  // Veel breder voor schouder-tot-schouder

@@ -1,12 +1,14 @@
 import { Label, Font, Color, Vector, CoordPlane, TextAlign, Rectangle, Actor } from "excalibur";
 
 export class UIManager {
-      constructor(engine) {
+    constructor(engine) {
         this.engine = engine;
         this.elements = new Map();
         this.healthFgRect = null; // Reference voor health bar Rectangle
         this.healthBarConfig = null; // Config voor health bar dimensions
-    }    // Create ammo counter
+    }
+
+    // Maak ammo counter
     createAmmoCounter() {
         const ammoLabel = new Label({
             text: "Ammo: 35/35 | Total: 250",
@@ -28,7 +30,7 @@ export class UIManager {
         return ammoLabel;
     }
 
-    // Create reload indicator
+    // Maak reload indicator
     createReloadIndicator() {
         const reloadLabel = new Label({
             text: "RELOADING",
@@ -49,7 +51,9 @@ export class UIManager {
         this.elements.set('reload', reloadLabel);
         
         return reloadLabel;
-    }    // Create health bar display
+    }
+
+    // Maak health bar weergave
     createHealthCounter(currentHealth, maxHealth) {
         const barWidth = 200;
         const barHeight = 20;
@@ -104,11 +108,12 @@ export class UIManager {
             x: barX,
             y: barY
         };
-        
-        console.log(`Health bar created: ${barWidth}x${barHeight} at (${barX}, ${barY})`);
+          // console.log(`Health bar created: ${barWidth}x${barHeight} at (${barX}, ${barY})`);
         
         return healthBgActor;
-    }    // Create score display
+    }
+
+    // Maak score weergave
     createScoreCounter() {
         const scoreLabel = new Label({
             text: "Score: 0",
@@ -128,16 +133,14 @@ export class UIManager {
         this.elements.set('score', scoreLabel);
         
         return scoreLabel;
-    }
-
-    // Update ammo display
+    }    // Update ammo weergave
     updateAmmo(current, max, total = null) {
         const ammo = this.elements.get('ammo');
         if (ammo) {
             if (total !== null) {
                 ammo.text = `Ammo: ${current}/${max} | Total: ${total}`;
                 
-                // Change color based on total ammo
+                // Verander kleur gebaseerd op totale ammo
                 if (total > 100) {
                     ammo.font.color = Color.White;
                 } else if (total > 50) {
@@ -150,38 +153,42 @@ export class UIManager {
                 ammo.font.color = Color.White;
             }
         }
-    }    // Update health bar display
+    }
+
+    // Update health bar weergave
     updateHealth(current, max) {
         if (!this.healthFgRect || !this.healthBarConfig) return;
         // Bereken health percentage
-        const healthPercent = Math.max(0, current / max);
-        console.log(`Updating health bar: ${current}/${max} = ${(healthPercent * 100).toFixed(1)}%`);
-        // Update voorgrond breedte en kleur
+        const healthPercent = Math.max(0, current / max);        // console.log(`Updating health bar: ${current}/${max} = ${(healthPercent * 100).toFixed(1)}%`);        // Update voorgrond breedte en kleur
         const newWidth = this.healthBarConfig.width * healthPercent;
         const healthColor = this.calculateHealthColor(healthPercent);
         this.healthFgRect.width = newWidth;
-        this.healthFgRect.color = healthColor;
-        // Geen tekstlabel meer
-        console.log(`Health bar updated: width=${newWidth.toFixed(1)}, color=${healthColor.toString()}`);
+        this.healthFgRect.color = healthColor;        // Geen tekstlabel meer
+        
+        // console.log(`Health bar updated: width=${newWidth.toFixed(1)}, color=${healthColor.toString()}`);
     }
 
-    // Update score display
+    // Update score weergave
     updateScore(score) {
-        const scoreElement = this.elements.get('score');        if (scoreElement) {
+        const scoreElement = this.elements.get('score');
+        
+        if (scoreElement) {
             scoreElement.text = `Score: ${score}`;
         }
     }
 
-    // Show/hide reload indicator
+    // Toon/verberg reload indicator
     showReloadIndicator(show) {
-        const reload = this.elements.get('reload');        if (reload) {
+        const reload = this.elements.get('reload');
+        
+        if (reload) {
             reload.visible = show;
         }
     }
 
-    // Create reload feedback messages
+    // Maak reload feedback berichten
     createReloadFeedback(message, colorName = "White", duration = 1500) {
-        // Color mapping
+        // Kleur mapping
         const colorMap = {
             "Red": Color.Red,
             "Green": Color.Green,
@@ -212,18 +219,18 @@ export class UIManager {
         setTimeout(() => {
             this.engine.remove(feedbackLabel);
         }, duration);
-        
-        console.log(`Reload feedback shown: "${message}" (${colorName}, ${duration}ms)`);
+          // console.log(`Reload feedback shown: "${message}" (${colorName}, ${duration}ms)`);
         
         return feedbackLabel;
-    }    // Create game over screen
+    }
+
+    // Maak game over scherm
     createGameOverScreen(finalScore = 0, highScore = 0, isNewHighScore = false) {
         // First clear all existing UI elements
         this.clearAll();
         
 
-        
-        // Main game over title
+          // Hoofdtitel game over
         const gameOverLabel = new Label({
             text: "GAME OVER!",
             pos: new Vector(this.engine.drawWidth / 2, this.engine.drawHeight / 2 - 120),
@@ -235,10 +242,9 @@ export class UIManager {
             }),
             anchor: new Vector(0.5, 0.5),
             coordPlane: CoordPlane.Screen,
-            zIndex: 200
-        });
+            zIndex: 200        });
         
-        // Score display
+        // Score weergave
         const scoreLabel = new Label({
             text: `Jouw Score: ${finalScore}`,
             pos: new Vector(this.engine.drawWidth / 2, this.engine.drawHeight / 2 - 50),
@@ -250,10 +256,9 @@ export class UIManager {
             }),
             anchor: new Vector(0.5, 0.5),
             coordPlane: CoordPlane.Screen,
-            zIndex: 200
-        });
+            zIndex: 200        });
         
-        // High score display
+        // High score weergave
         const highScoreColor = isNewHighScore ? Color.fromRGB(255, 215, 0) : Color.fromRGB(150, 150, 150);
         const highScoreText = isNewHighScore ? `🎉 NIEUWE HOOGSTE SCORE: ${highScore}! 🎉` : `Hoogste Score: ${highScore}`;
         
@@ -268,10 +273,9 @@ export class UIManager {
             }),
             anchor: new Vector(0.5, 0.5),
             coordPlane: CoordPlane.Screen,
-            zIndex: 200
-        });
+            zIndex: 200        });
         
-        // Play again instruction
+        // Speel opnieuw instructie
         const playAgainLabel = new Label({
             text: "Druk op SPATIE voor nieuw spel | ESC voor hoofdmenu",
             pos: new Vector(this.engine.drawWidth / 2, this.engine.drawHeight / 2 + 50),
@@ -295,9 +299,10 @@ export class UIManager {
         this.elements.set('gameOverScore', scoreLabel);
         this.elements.set('gameOverHighScore', highScoreLabel);
         this.elements.set('playAgain', playAgainLabel);
-        
-        return gameOverLabel;
-    }    // Create wave announcement
+          return gameOverLabel;
+    }
+
+    // Maak wave aankondiging
     createWaveAnnouncement(text, duration = 3000) {
         const announcement = new Label({
             text: text,
@@ -325,7 +330,7 @@ export class UIManager {
         return announcement;
     }
 
-    // Create main menu
+    // Maak hoofdmenu
     createMainMenu() {
         // Main title
         const titleLabel = new Label({
@@ -376,7 +381,7 @@ export class UIManager {
         this.elements.set('menuControls1', controlsLabel1);
         
         return titleLabel;
-    }    // Remove all UI elements
+    }    // Verwijder alle UI elementen
     clearAll() {
 
         
@@ -385,18 +390,17 @@ export class UIManager {
             this.engine.remove(element);
         });
         
-        this.elements.clear();
-        this.healthBarConfig = null; // Reset health bar config
-        this.healthFgRect = null; // Reset Rectangle reference
+        this.elements.clear();        this.healthBarConfig = null; // Reset health bar configuratie
+        this.healthFgRect = null; // Reset Rectangle referentie
 
     }
 
-    // Get UI element by name
+    // Krijg UI element bij naam
     getElement(name) {
         return this.elements.get(name);
     }
 
-    // Check if element exists
+    // Controleer of element bestaat
     hasElement(name) {
         return this.elements.has(name);
     }    // Helper method om kleur te berekenen op basis van health percentage

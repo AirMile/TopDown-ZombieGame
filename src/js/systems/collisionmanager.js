@@ -11,16 +11,15 @@ export class CollisionManager {
         this.collisionHandlers = new Map();
         this.score = 0;
         this.setupDefaultHandlers();
-    }    setupDefaultHandlers() {
-        // Bullet vs Zombie collision
+    }    setupDefaultHandlers() {        // Bullet vs Zombie botsing
         this.registerHandler('bullet-zombie', (bullet, zombie) => {
-            // Deal damage to zombie (points will be awarded in zombie's takeDamage method)
+            // Geef schade aan zombie (punten worden toegekend in zombie's takeDamage methode)
             const damageDealt = 10;
             zombie.takeDamage(damageDealt);
             
-            // Kill bullet
+            // Vernietigt bullet
             bullet.kill();
-        });        // Player vs Zombie collision
+        });        // Player vs Zombie botsing
         this.registerHandler('player-zombie', (player, zombie) => {
 
 
@@ -44,13 +43,12 @@ export class CollisionManager {
 
         });
         
-        // Player vs AmmoPickup collision
+        // Player vs AmmoPickup botsing
         this.registerHandler('player-ammo', (player, pickup) => {
 
 
-            
-            // AmmoPickup handles the collision in its own onInitialize
-            // This handler is just for logging/additional logic if needed
+              // AmmoPickup handelt de botsing af in zijn eigen onInitialize
+            // Deze handler is alleen voor logging/extra logica indien nodig
 
         });
     }
@@ -82,7 +80,7 @@ export class CollisionManager {
     }
 
     handleCollision(actorA, actorB) {
-        // Check for bullet vs zombie
+        // Controleer voor bullet vs zombie
         if (actorA instanceof Bullet && (actorB instanceof SlowZombie || actorB instanceof FastZombie)) {
             const handler = this.collisionHandlers.get('bullet-zombie');
             if (handler) {
@@ -91,7 +89,7 @@ export class CollisionManager {
             }
         }
 
-        // Check for zombie vs bullet (reverse order)
+        // Controleer voor zombie vs bullet (omgekeerde volgorde)
         if ((actorA instanceof SlowZombie || actorA instanceof FastZombie) && actorB instanceof Bullet) {
             const handler = this.collisionHandlers.get('bullet-zombie');
             if (handler) {
@@ -100,7 +98,7 @@ export class CollisionManager {
             }
         }
 
-        // Check for player vs zombie
+        // Controleer voor player vs zombie
         if (actorA instanceof Player && (actorB instanceof SlowZombie || actorB instanceof FastZombie)) {
             const handler = this.collisionHandlers.get('player-zombie');
             if (handler) {
@@ -108,7 +106,7 @@ export class CollisionManager {
                 return;
             }
         }
-          // Check for zombie vs player (reverse order)
+          // Controleer voor zombie vs player (omgekeerde volgorde)
         if ((actorA instanceof SlowZombie || actorA instanceof FastZombie) && actorB instanceof Player) {
             const handler = this.collisionHandlers.get('player-zombie');
             if (handler) {
@@ -117,7 +115,7 @@ export class CollisionManager {
             }
         }
         
-        // Check for player vs ammo pickup
+        // Controleer voor player vs ammo pickup
         if (actorA instanceof Player && actorB instanceof AmmoPickup) {
             const handler = this.collisionHandlers.get('player-ammo');
             if (handler) {
@@ -126,7 +124,7 @@ export class CollisionManager {
             }
         }
         
-        // Check for ammo pickup vs player (reverse order)
+        // Controleer voor ammo pickup vs player (omgekeerde volgorde)
         if (actorA instanceof AmmoPickup && actorB instanceof Player) {
             const handler = this.collisionHandlers.get('player-ammo');
             if (handler) {
