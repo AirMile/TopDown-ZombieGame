@@ -3,7 +3,14 @@ import { Resources } from "../resources.js"
 import { Player } from "../player/player.js"; // Importeer Player
 import { AmmoPickup } from "../items/ammopickup.js"; // Importeer AmmoPickup
 
-export class Zombie extends Actor {    movementSpeed = 50; // Standaard snelheid, kan overschreven worden door subklassen
+export class Zombie extends Actor {
+    #movementSpeed = 50; // Standaard snelheid, kan overschreven worden door subklassen
+    #maxHealth = 30; // Standaard health, overschreven in subklassen
+    #health;
+    #isKnockedBack = false;
+    #knockbackTimer = 0;
+    #knockbackDuration = 200; // 200ms knockback duur
+    
     constructor(options) { // Accepteer options object
         super({ // Geef alle options door aan de Actor constructor
             ...options, 
@@ -12,26 +19,50 @@ export class Zombie extends Actor {    movementSpeed = 50; // Standaard snelheid
         // Graphics worden ingesteld in subklassen
         this.pos = new Vector(500, 300)
         // this.vel = new Vector(-10, 0) // Verwijderd, snelheid wordt dynamisch berekend
-        this.maxHealth = 30; // Standaard health, overschreven in subklassen
-        this.health = this.maxHealth;
-          // Knockback systeem
-        this.isKnockedBack = false;
-        this.knockbackTimer = 0;
-        this.knockbackDuration = 200; // 200ms knockback duur
+        this.#health = this.#maxHealth;
+    }
+      // Getters voor read-only toegang
+    get movementSpeed() {
+        return this.#movementSpeed;
+    }
+    
+    get maxHealth() {
+        return this.#maxHealth;
+    }
+    
+    get health() {
+        return this.#health;
+    }
+    
+    get isKnockedBack() {
+        return this.#isKnockedBack;
+    }
+    
+    // Setters voor subklassen (waar nodig)
+    set movementSpeed(speed) {
+        this.#movementSpeed = speed;
+        console.log(`Zombie movement speed set: speed=${speed}`);
+    }
+    
+    set maxHealth(health) {
+        this.#maxHealth = health;
+        this.#health = health;
+        console.log(`Zombie max health set: maxHealth=${health}, currentHealth=${this.#health}`);
     }
     
     onInitialize(engine) {
         // Algemene collision logic voor zombies kan hier, of in subclasses.
     }    onPreUpdate(engine, delta) {
         // Update knockback timer
-        if (this.isKnockedBack) {
-            this.knockbackTimer -= delta;
+        if (this.#isKnockedBack) {
+            this.#knockbackTimer -= delta;
             
             // Pas wrijving toe tijdens knockback
             const frictionForce = 0.95; // 5% snelheidsvermindering per frame
             this.vel = this.vel.scale(frictionForce);
             
-            if (this.knockbackTimer <= 0) {                this.isKnockedBack = false;
+            if (this.#knockbackTimer <= 0) {
+                this.#isKnockedBack = false;
                 // console.log(`Zombie knockback ended: position=${this.pos.x.toFixed(2)},${this.pos.y.toFixed(2)}`);
             }
             // Tijdens knockback, overschrijf velocity niet - laat knockback physics werken
@@ -43,8 +74,9 @@ export class Zombie extends Actor {    movementSpeed = 50; // Standaard snelheid
 
         if (player) {
             // Bereken de richting naar de speler
-            const directionToPlayer = player.pos.sub(this.pos).normalize();            // Stel de snelheid in de richting van de speler in
-            this.vel = directionToPlayer.scale(this.movementSpeed);
+            const directionToPlayer = player.pos.sub(this.pos).normalize();
+            // Stel de snelheid in de richting van de speler in
+            this.vel = directionToPlayer.scale(this.#movementSpeed);
             
             // Optioneel: Zombie kijkt naar de speler
             this.rotation = directionToPlayer.toAngle() - Math.PI / 2;
@@ -54,13 +86,15 @@ export class Zombie extends Actor {    movementSpeed = 50; // Standaard snelheid
     }    // Methode voor het nemen van schade van bullets
     takeDamage(damage) {
         // Voorkom schade als al dood
-        if (this.health <= 0) {
+        if (this.#health <= 0) {
             return;
         }
         
-        this.health -= damage;
+        this.#health -= damage;
+        console.log(`Zombie took damage: damage=${damage}, remainingHealth=${this.#health}, maxHealth=${this.#maxHealth}`);
         
-        if (this.health <= 0) {
+        if (this.#health <= 0) {
+            console.log(`Zombie died: finalHealth=${this.#health}, position=${this.pos.x.toFixed(2)},${this.pos.y.toFixed(2)}`);
             
             // Ken punten toe gebaseerd op zombie type
             this.awardKillPoints();
@@ -70,17 +104,17 @@ export class Zombie extends Actor {    movementSpeed = 50; // Standaard snelheid
             
             this.kill();
         }
-    }
-      // Methode voor het toepassen van knockback
+    }    // Methode voor het toepassen van knockback
     applyKnockback(direction, strength) {
         // Start knockback status
-        this.isKnockedBack = true;
-        this.knockbackTimer = this.knockbackDuration;
+        this.#isKnockedBack = true;
+        this.#knockbackTimer = this.#knockbackDuration;
         
         // Pas knockback velocity toe
         const knockbackVelocity = direction.scale(strength);
         this.vel = this.vel.add(knockbackVelocity);
-          // console.log(`Zombie knockback applied: direction=${direction.x.toFixed(2)},${direction.y.toFixed(2)}, strength=${strength}, newVel=${this.vel.x.toFixed(2)},${this.vel.y.toFixed(2)}`);
+        
+        console.log(`Zombie knockback applied: direction=${direction.x.toFixed(2)},${direction.y.toFixed(2)}, strength=${strength}, newVel=${this.vel.x.toFixed(2)},${this.vel.y.toFixed(2)}, isKnockedBack=${this.#isKnockedBack}`);
     }    // Ken punten toe wanneer zombie wordt gedood
     awardKillPoints() {
         // Vind de collision manager om punten toe te kennen
@@ -90,24 +124,31 @@ export class Zombie extends Actor {    movementSpeed = 50; // Standaard snelheid
             let points = 15; // Beide zombie types geven nu 15 punten
             
             collisionManager.addScore(points);
-        } 
-    }
-      // Drop ammo pickup wanneer zombie wordt gedood
+            console.log(`Zombie kill points awarded: points=${points}, totalScore=${collisionManager.getScore()}`);
+        } else {
+            console.log(`Could not award kill points: collision manager not found`);
+        }
+    }    // Drop ammo pickup wanneer zombie wordt gedood
     dropAmmoPickup() {
         // 8% kans om ammo pickup te droppen (meer schaars gemaakt)
         const dropChance = 0.25;
         const randomValue = Math.random();
         
+        console.log(`Zombie drop ammo check: dropChance=${dropChance}, randomValue=${randomValue.toFixed(3)}, willDrop=${randomValue < dropChance}`);
+        
         if (randomValue < dropChance) {
+            console.log(`Spawning ammo pickup at zombie position: x=${this.pos.x.toFixed(2)}, y=${this.pos.y.toFixed(2)}`);
             
             // Spawn ammo pickup op zombie positie
             const pickup = new AmmoPickup(this.pos.x, this.pos.y);
             
             if (this.scene?.engine) {
                 this.scene.engine.add(pickup);
-            } 
+                console.log(`Ammo pickup successfully added to scene`);
+            } else {
+                console.log(`Could not add ammo pickup: scene or engine not found`);
+            }
         } 
-        
     }
     
 

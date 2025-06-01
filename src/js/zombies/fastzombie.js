@@ -5,19 +5,22 @@ import { Player } from "../player/player.js";
 import { Bullet } from "../weapons/bullet.js";
 
 export class FastZombie extends Zombie {    
+    #damage = 25; // Fast zombies deal more damage
+    #damageTimer = 0; // Timer voor damage cooldown
+    #damageCooldown = 500; // 0.5 seconds in milliseconds
+    #initializationDelay = 1000; // 1 second delay before damage can be applied
+
     constructor() {
         super({
             width: 24, // even smaller for better scaling
             height: 24,
             collisionType: CollisionType.Active // Make zombie collidable
         });
-        this.movementSpeed = 100; // Langzame zombies bewegen langzamer        // Zombie eigenschappen
-        this.damage = 25; // Fast zombies deal more damage
+        this.movementSpeed = 100; // Fast zombies move faster
+        // Zombie eigenschappen
         this.maxHealth = 10; // Fast zombies have 10 health
-        this.health = this.maxHealth;        // Damage cooldown systeem
-        this.damageTimer = 0; // Timer voor damage cooldown
-        this.damageCooldown = 500; // 0.5 seconds in milliseconds
-        this.initializationDelay = 1000; // 1 second delay before damage can be applied        // Kies willekeurige sprite
+
+        // Kies willekeurige sprite
         const fastSprites = [
             Resources.FastZombie1,
             Resources.FastZombie2,
@@ -36,26 +39,34 @@ export class FastZombie extends Zombie {
         super.onPreUpdate(engine, delta);
         
         // Update initialisatie vertraging
-        if (this.initializationDelay > 0) {
-            this.initializationDelay -= delta;
+        if (this.#initializationDelay > 0) {
+            this.#initializationDelay -= delta;
+            // Console.log voor initialisatievertraging
+            if (this.#initializationDelay <= 0) {
+                console.log(`FastZombie initialization complete. pos: ${this.pos.x.toFixed(1)},${this.pos.y.toFixed(1)}`);
+            }
         }
         
         // Update damage timer
-        if (this.damageTimer > 0) {
-            this.damageTimer -= delta;
+        if (this.#damageTimer > 0) {
+            this.#damageTimer -= delta;
         }
         
         // Log rotatie voor debug (elke 60 frames = ongeveer 1x per seconde)
         if (Math.random() < 0.016) { // ~1/60 kans per frame
             const rotationDegrees = (this.rotation * 180 / Math.PI).toFixed(1);
+            console.log(`FastZombie rotation: ${rotationDegrees} degrees, pos: ${this.pos.x.toFixed(1)},${this.pos.y.toFixed(1)}, initializationDelay: ${this.#initializationDelay > 0}, damageTimer: ${this.#damageTimer > 0}`);
         }
         
         // Controleer alleen op collision na initialisatie vertraging
-        if (this.initializationDelay <= 0) {
+        if (this.#initializationDelay <= 0) {
             this.checkPlayerCollision(engine, delta);
-        } else if (this.initializationDelay <= 900) { // Log once when almost ready
+        } else if (this.#initializationDelay <= 900) { // Log once when almost ready
+            // Optional: Add a specific log if needed when almost ready
         }
-    }      checkPlayerCollision(engine, delta) {
+    }
+
+    checkPlayerCollision(engine, delta) {
         // Zoek player in de scene met dezelfde methode als base zombie class
         const player = engine.currentScene.actors.find(actor => actor instanceof Player);
         
@@ -72,16 +83,17 @@ export class FastZombie extends Zombie {
         
         if (isCurrentlyColliding) {
             // We zijn aan het botsen met player
-            if (this.damageTimer <= 0) {
-
+            if (this.#damageTimer <= 0) {
+                const playerHealthBefore = player.currentHealth; // Assuming player has a getter for currentHealth
                 // Breng damage toe aan player
-                player.takeHit(this.damage);
+                player.takeHit(this.#damage);
+                console.log(`FastZombie dealing damage: damage=${this.#damage}, playerHealthBefore=${playerHealthBefore}, playerHealthAfter=${player.currentHealth}, damageTimer=${this.#damageTimer}, damageCooldown=${this.#damageCooldown}, pos: ${this.pos.x.toFixed(1)},${this.pos.y.toFixed(1)}`);
                 
                 // Reset damage timer
-                this.damageTimer = this.damageCooldown;
-
+                this.#damageTimer = this.#damageCooldown;
             }
-        }    }    onInitialize(engine) {
+        }
+    }    onInitialize(engine) {
         super.onInitialize(engine); // Roep base class onInitialize aan        
         
         // Vergroot collider naar schouder-breedte (veel breder voor échte schouder-tot-schouder)

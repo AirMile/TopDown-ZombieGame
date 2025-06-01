@@ -361,7 +361,7 @@ export class UIManager {
             coordPlane: CoordPlane.Screen,
             zIndex: 200        });        // Controls info - multiple lines for all features
         const controlsLabel1 = new Label({
-            text: "WASD: Move | WASD x 2: Dash | Shift + W: Sprint | Left/Right Arrow: Rotate | Space: Shoot | R: Reload",
+            text: "WASD: Move | Shift + W: Sprint | Left/Right Arrow: Rotate | Space: Shoot | R: Reload",
             pos: new Vector(this.engine.drawWidth / 2, this.engine.drawHeight / 2 + 50),
             font: new Font({
                 family: 'Arial',

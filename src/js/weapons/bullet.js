@@ -3,9 +3,11 @@ import { SlowZombie } from "../zombies/slowzombie.js";
 import { FastZombie } from "../zombies/fastzombie.js";
 
 export class Bullet extends Actor {
-    startPos;
-    range = 800;
-    lifetime = 5000;    constructor(x, y, richting) {
+    #startPos;
+    #range = 800;
+    #lifetime = 5000;
+    
+    constructor(x, y, richting) {
         super({ 
             x, 
             y, 
@@ -15,10 +17,23 @@ export class Bullet extends Actor {
             collisionType: CollisionType.Active
         });
         this.vel = richting.normalize().scale(400);
-        this.startPos = new Vector(x, y);
-          // Debug: log bullet richting voor troubleshooting
-        // console.log(`Bullet created: richting=${richting.x.toFixed(2)},${richting.y.toFixed(2)}, vel=${this.vel.x.toFixed(2)},${this.vel.y.toFixed(2)}`);
-    }    onInitialize(engine) {
+        this.#startPos = new Vector(x, y);
+          
+        console.log(`Bullet created: direction=${richting.x.toFixed(2)},${richting.y.toFixed(2)}, vel=${this.vel.x.toFixed(2)},${this.vel.y.toFixed(2)}, range=${this.#range}, lifetime=${this.#lifetime}ms`);
+    }
+
+    // Getters voor read-only access
+    get startPos() {
+        return this.#startPos;
+    }
+
+    get range() {
+        return this.#range;
+    }
+
+    get lifetime() {
+        return this.#lifetime;
+    }onInitialize(engine) {
         // Luister naar botsingen op deze bullet
         this.on('collisionstart', (event) => {
             // Krijg de werkelijke actor van de collider
@@ -53,14 +68,14 @@ export class Bullet extends Actor {
         });
     }    onPreUpdate(engine, delta) {
         // Update levensduur
-        this.lifetime -= delta;
-        if (this.lifetime <= 0) {
+        this.#lifetime -= delta;
+        if (this.#lifetime <= 0) {
             this.kill();
             return;
         }
 
         // Controleer bereik
-        if (this.pos.distance(this.startPos) > this.range) {
+        if (this.pos.distance(this.#startPos) > this.#range) {
             this.kill();
         }
     }
