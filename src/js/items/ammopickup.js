@@ -26,7 +26,9 @@ export class AmmoPickup extends Actor {
 
     get ammoAmount() {
         return this.#ammoAmount;
-    }    onInitialize(engine) {
+    }    
+    
+    onInitialize(engine) {
         // Luister naar botsingen met de speler
         this.on('collisionstart', (event) => {
             const otherActor = event.other.owner;
@@ -34,12 +36,12 @@ export class AmmoPickup extends Actor {
             if (otherActor instanceof Player) {
                 console.log(`AmmoPickup collision with player, giving ${this.#ammoAmount} ammo`);
                 
-                // Geef ammo aan de speler
-                if (otherActor.weapon && typeof otherActor.weapon.addAmmo === 'function') {
-                    const ammoAdded = otherActor.weapon.addAmmo(this.#ammoAmount);
+                // Geef ammo direct aan de speler (niet meer via weapon)
+                if (typeof otherActor.addAmmo === 'function') {
+                    const ammoAdded = otherActor.addAmmo(this.#ammoAmount);
                     console.log(`Ammo pickup: ${ammoAdded} ammo added to player`);
                 } else {
-                    console.warn('AmmoPickup: Player weapon not found or addAmmo method missing');
+                    console.warn('AmmoPickup: Player addAmmo method missing');
                 }
                 
                 // Verwijder de pickup

@@ -102,7 +102,8 @@ export class ZombieSpawner {
         for (const actor of this.#engine.currentScene.actors) {
             if (actor.tags?.has('player')) return actor;
             if (actor instanceof Player) return actor;
-            if (actor.weapon && actor.movement && actor.currentHealth !== undefined) return actor;
+            // Check voor player eigenschappen (aangepast voor refactored player)
+            if (actor.movement && actor.currentHealth !== undefined && actor.getCurrentAmmo !== undefined) return actor;
         }
         // console.log("Player not found by any method in findPlayer.");
         return null;

@@ -15,10 +15,11 @@ export class Game extends Engine {
             height: 720,
             maxFps: 60,
             displayMode: DisplayMode.FitScreen
-        });          // Game status
+        });          
+        // Game status
         this.gameState = 'MENU'; // 'MENU', 'PLAYING', 'GAME_OVER'
         this.isGameOver = false;
-          // Initialiseer systemen
+        // Initialiseer systemen
         this.player = null;
         this.spawner = null;
         this.uiManager = null;
@@ -113,27 +114,34 @@ export class Game extends Engine {
         const mapWidth = 20000;
         const mapHeight = 20000;
         
-        
         this.background = new Background(mapWidth, mapHeight);
         this.add(this.background);
         
-    }initializeSpawner() {
+    }
+    
+    initializeSpawner() {
         this.spawner = new ZombieSpawner(this);
-    }    initializeUI() {
+    }    
+    
+    initializeUI() {
         this.uiManager = new UIManager(this);
         this.uiManager.createAmmoCounter();
         this.uiManager.createReloadIndicator();
         this.uiManager.createHealthCounter(this.player.currentHealth, this.player.maxHealth);
-        this.uiManager.createScoreCounter();          // Verbind UI met player weapon systeem
-        if (this.player && this.player.weapon) {
-            this.player.weapon.setUIManager(this.uiManager);
+        this.uiManager.createScoreCounter();          
+        
+        // Verbind UI met player (voorheen player.weapon)
+        if (this.player) {
+            this.player.setUIManager(this.uiManager);
         }
     }
 
     initializeCollisions() {
         this.collisionManager = new CollisionManager(this, this);
         this.collisionManager.setupCollisions();
-    }    enablePlayerShootingAfterDelay() {
+    }    
+    
+    enablePlayerShootingAfterDelay() {
         // Schakel schieten in na een korte vertraging om onmiddellijk schieten te voorkomen bij starten met SPACE
         setTimeout(() => {
             if (this.player) {
@@ -144,11 +152,15 @@ export class Game extends Engine {
 
     setupCamera() {
         this.currentScene.camera.strategy.lockToActor(this.player);
-    }    spawnInitialZombies() {
+    }    
+    
+    spawnInitialZombies() {
         // Start het continue spawning systeem
         this.spawner.start();
         
-    }onPreUpdate(engine, delta) {
+    }
+    
+    onPreUpdate(engine, delta) {
         super.onPreUpdate(engine, delta);
 
         // Update alleen game logica wanneer daadwerkelijk aan het spelen
@@ -166,29 +178,34 @@ export class Game extends Engine {
         
         // Update UI
         this.updateUI();
-    }    updateCamera() {
+    }    
+    
+    updateCamera() {
         if (this.player) {
             // Camera rotatie volgt player met 180 graden offset
             this.currentScene.camera.rotation = -this.player.rotation + Math.PI / 2 + Math.PI;
         }
-    }    updateUI() {
-        // Update ammo counter als player weapon bestaat
-        if (this.player?.weapon) {
-            const currentAmmo = this.player.weapon.getCurrentAmmo();
-            const totalAmmo = this.player.weapon.getTotalAmmo();
-            this.uiManager.updateAmmo(currentAmmo, this.player.weapon.maxBullets, totalAmmo);
-            this.uiManager.showReloadIndicator(this.player.weapon.reloading);
+    }    
+    
+    updateUI() {
+        // Update ammo counter als player bestaat
+        if (this.player) {
+            const currentAmmo = this.player.getCurrentAmmo();
+            const totalAmmo = this.player.getTotalAmmo();
+            this.uiManager.updateAmmo(currentAmmo, this.player.maxBullets, totalAmmo);
+            this.uiManager.showReloadIndicator(this.player.reloading);
         }
-    }endGame() {
+    }
+    
+    endGame() {
         this.gameState = 'GAME_OVER';
         this.isGameOver = true;
         
+        const finalScore = this.collisionManager.getScore();        
         
-        const finalScore = this.collisionManager.getScore();        // Controleer en update high score
+        // Controleer en update high score
         const isNewHighScore = this.highScoreManager.checkAndUpdateHighScore(finalScore);
         
-
-
         // Stop spawner
         if (this.spawner) {
             this.spawner.stop();
@@ -196,14 +213,16 @@ export class Game extends Engine {
         
         // Vernietig alle entiteiten inclusief player
         this.killAllEntities();
-          // Maak game over scherm met high score informatie
+          
+        // Maak game over scherm met high score informatie
         this.uiManager.createGameOverScreen(finalScore, this.highScoreManager.getHighScore(), isNewHighScore);
         
         // Setup game over input handlers
         this.setupGameOverInput();
         
     }
-      killAllEntities() {
+      
+    killAllEntities() {
         // Haal alle actors in de huidige scene op
         const allActors = this.currentScene.actors;
         const entityCount = allActors.length;
@@ -215,10 +234,13 @@ export class Game extends Engine {
             }
         });
 
-    }    setupGameOverInput() {
+    }    
+    
+    setupGameOverInput() {
         // Verwijder bestaande input handlers om conflicten te voorkomen
         this.input.keyboard.off('press');
-          this.input.keyboard.on('press', (evt) => {
+          
+        this.input.keyboard.on('press', (evt) => {
             if (this.gameState === 'GAME_OVER') {
                 if (evt.key === Keys.Space) {
                     // Herstart game
@@ -234,10 +256,14 @@ export class Game extends Engine {
     // Helper methode om zombies te spawnen tijdens gameplay
     spawnZombieAt(type, x, y) {
         return this.spawner.spawnZombieAt(type, x, y);
-    }    // Helper methode om wave-gebaseerde gameplay te starten
+    }    
+    
+    // Helper methode om wave-gebaseerde gameplay te starten
     startWaveMode() {
         this.spawner.start();
-    }    // Helper methode om huidige game statistieken op te halen
+    }    
+    
+    // Helper methode om huidige game statistieken op te halen
     getGameStats() {
         return {
             playerHealth: this.player?.currentHealth || 0,
@@ -246,7 +272,9 @@ export class Game extends Engine {
             difficulty: this.spawner?.difficulty || 1,
             spawnInterval: this.spawner?.spawnInterval || 2000
         };
-    }// Debug methode om test zombies te spawnen
+    }
+    
+    // Debug methode om test zombies te spawnen
     spawnTestZombies() {
         this.spawner.spawnZombieAt('slow', 200, 150);
         this.spawner.spawnZombieAt('fast', 250, 150);

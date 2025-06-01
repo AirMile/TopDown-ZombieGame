@@ -1,10 +1,8 @@
 import { Actor, Vector, Keys, CollisionType, Shape, vec } from "excalibur";
 import { Resources } from "../resources.js";
-import { PlayerWeapon } from "./playerweapon.js";
 import { PlayerMovement } from "./playermovement.js";
 import { PlayerInput } from "./playerinput.js";
-import { SlowZombie } from "../zombies/slowzombie.js";
-import { FastZombie } from "../zombies/fastzombie.js";
+import { Bullet } from "../weapons/bullet.js";
 
 export class Player extends Actor {
     // Private fields voor encapsulation
@@ -19,6 +17,16 @@ export class Player extends Actor {
     #isShooting = false;
     #shootingAnimationDuration = 150; 
     #shootingAnimationTimer = 0;
+
+    // Weapon system properties (voorheen in PlayerWeapon)
+    #fireCooldown = 0;
+    #bulletsFired = 0;
+    #reloading = false;
+    #reloadTime = 2500;
+    #maxBullets = 35; // Magazijn grootte
+    #fireRate = 100; // ms tussen schoten
+    #totalAmmo = 250; // Start ammo - kan oneindig groeien via pickups
+    #uiManager = null; // Reference to UI manager
 
     constructor() {
         super({ 
@@ -50,9 +58,11 @@ export class Player extends Actor {
         this.vel = new Vector(0, 0);
         
         // Initialiseer subsystemen
-        this.weapon = new PlayerWeapon(this);
         this.movement = new PlayerMovement(this);
         this.input = new PlayerInput(this);
+        
+        // Update initial ammo display
+        this.updateAmmoUI();
     }
 
     // Getters voor read-only access
@@ -85,7 +95,17 @@ export class Player extends Actor {
         return this.#isShooting;
     }
 
-    onInitialize(engine) {        // Stel een betere collider in voor de speler (groter voor betere botsingsdetectie)
+    // Weapon getters (voorheen via this.weapon)
+    get reloading() {
+        return this.#reloading;
+    }
+
+    get maxBullets() {
+        return this.#maxBullets;
+    }
+
+    onInitialize(engine) {        
+        // Stel een betere collider in voor de speler (groter voor betere botsingsdetectie)
         const colliderWidth = 10;  
         const colliderHeight = 10; 
         
@@ -110,30 +130,29 @@ export class Player extends Actor {
             engine.input.keyboard._playerReloadListenerAdded = true;
         }
     }    
+    
     handleReloadInput() {
-        if (!this.weapon) {
-            return;
-        }
-        
         // Haal UI manager op voor feedback
         const uiManager = this.scene?.engine?.uiManager;
-          // Controleer of herladen mogelijk is
-        if (this.weapon.reloading) {
+          
+        // Controleer of herladen mogelijk is
+        if (this.#reloading) {
             return;
         }
         
-        if (this.weapon.getCurrentAmmo() >= this.weapon.maxBullets) {
+        if (this.getCurrentAmmo() >= this.#maxBullets) {
             return;
         }
         
-        if (this.weapon.getTotalAmmo() <= 0) {
+        if (this.getTotalAmmo() <= 0) {
             if (uiManager) {
                 uiManager.createReloadFeedback("No Ammo Left!", "Red");
             }
             return;
         }
-          // Activeer herladen
-        const reloadSuccess = this.weapon.manualReload();
+          
+        // Activeer herladen
+        const reloadSuccess = this.manualReload();
         
         if (reloadSuccess) {
             if (uiManager) {
@@ -144,7 +163,9 @@ export class Player extends Actor {
                 uiManager.createReloadFeedback("Reload Failed!", "Red");
             }
         }
-    }    onPreUpdate(engine, delta) {        
+    }    
+    
+    onPreUpdate(engine, delta) {        
         // Update invulnerabilityTimer
         if (this.#isInvulnerable) {
             this.#invulnerabilityTimer -= delta;
@@ -161,8 +182,12 @@ export class Player extends Actor {
             }
         }
         
+        // Update weapon cooldown
+        if (this.#fireCooldown > 0) {
+            this.#fireCooldown -= delta;
+        }
+        
         // Update subsystemen
-        this.weapon.update(delta);
         this.movement.update(delta);
         this.input.update(engine, delta);
 
@@ -178,13 +203,125 @@ export class Player extends Actor {
         const { speed, strafe, isSprinting, isShooting } = this.input.getMovementInput(engine);        
         
         // Behandel schieten - alleen wanneer spatiebalk ingedrukt is
-        if (isShooting && !isSprinting && this.weapon.canShoot() && this.#shootingEnabled) {
-            this.weapon.shoot();
+        if (isShooting && !isSprinting && this.canShoot() && this.#shootingEnabled) {
+            this.shoot();
         }        
         
         // Pas beweging toe
         this.vel = this.movement.calculateVelocity(speed, strafe);
-    }    takeHit(damage = 10) {
+    }
+    
+    // Weapon system methods (voorheen in PlayerWeapon)
+    canShoot() {
+        return !this.#reloading && this.#fireCooldown <= 0 && this.getCurrentAmmo() > 0;
+    }
+    
+    shoot() {
+        if (!this.canShoot()) return;
+
+        const direction = Vector.fromAngle(this.rotation);
+        const bulletStart = this.pos.add(direction.scale(this.width / 2 + 5));
+        const bullet = new Bullet(bulletStart.x, bulletStart.y, direction);
+        
+        if (this.scene?.engine) {
+            this.scene.engine.add(bullet);
+        }
+
+        // Trigger shooting animation
+        this.startShootingAnimation();
+
+        this.#bulletsFired++;
+        this.#fireCooldown = this.#fireRate;
+
+        // Update ammo UI
+        this.updateAmmoUI();
+
+        if (this.#bulletsFired >= this.#maxBullets) {
+            this.startReload();
+        }
+    }
+    
+    startReload() {
+        // Check of we genoeg totaal ammo hebben voor reload
+        if (this.#totalAmmo <= 0) {
+            return;
+        }
+        
+        this.#reloading = true;
+        
+        // Show reload indicator in UI
+        if (this.#uiManager) {
+            this.#uiManager.showReloadIndicator(true);
+            // Toon automatische reload feedback
+            this.#uiManager.createReloadFeedback("Reloading...", "Green", 2500);
+        }
+          
+        setTimeout(() => {
+            // Bereken hoeveel kogels we nodig hebben voor vol magazijn
+            const bulletsNeeded = this.#bulletsFired;
+            const bulletsToReload = Math.min(bulletsNeeded, this.#totalAmmo);
+            
+            // Update ammo counts
+            this.#totalAmmo -= bulletsToReload;
+            // Bug fix: correcte berekening voor bulletsFired gebaseerd op werkelijk geladen kogels
+            this.#bulletsFired = this.#bulletsFired - bulletsToReload;
+            
+            this.#reloading = false;
+            
+            // Hide reload indicator and update ammo UI
+            if (this.#uiManager) {
+                this.#uiManager.showReloadIndicator(false);
+                this.updateAmmoUI();
+            }
+        }, this.#reloadTime);
+    }
+    
+    // Manual reload (can be triggered by R key)
+    manualReload() {
+        if (!this.#reloading && this.#bulletsFired > 0 && this.#totalAmmo > 0) {
+            this.startReload();
+            return true;
+        }
+        return false;
+    }
+
+    // Get current ammo count in magazine
+    getCurrentAmmo() {
+        return this.#maxBullets - this.#bulletsFired;
+    }
+
+    // Get total ammo remaining
+    getTotalAmmo() {
+        return this.#totalAmmo;
+    }
+    
+    // Add ammo from pickup - UNLIMITED AMMO
+    addAmmo(amount) {
+        const oldTotal = this.#totalAmmo;
+        this.#totalAmmo += amount; // Geen maximum limiet meer!
+        const actualAdded = this.#totalAmmo - oldTotal;
+        
+        // Update UI
+        this.updateAmmoUI();
+        
+        return actualAdded;
+    }
+    
+    // Update ammo display in UI
+    updateAmmoUI() {
+        if (this.#uiManager) {
+            const currentAmmo = this.#maxBullets - this.#bulletsFired;
+            this.#uiManager.updateAmmo(currentAmmo, this.#maxBullets, this.#totalAmmo);
+        }
+    }
+
+    // Set UI manager reference
+    setUIManager(uiManager) {
+        this.#uiManager = uiManager;
+        this.updateAmmoUI();
+    }
+    
+    takeHit(damage = 10) {
         if (this.#isInvulnerable) {
             return;
         }        
@@ -199,8 +336,6 @@ export class Player extends Actor {
         this.#isInvulnerable = true;
         this.#invulnerabilityTimer = this.#invulnerabilityTime;
           
-        // console.log(`Player took damage: ${damage}, health=${this.#currentHealth}/${this.#maxHealth}`);
-        
         // Update UI indien beschikbaar
         if (this.scene?.engine?.uiManager) {
             this.scene.engine.uiManager.updateHealth(this.#currentHealth, this.#maxHealth);
@@ -209,12 +344,11 @@ export class Player extends Actor {
         // Controleer op dood
         if (this.#currentHealth <= 0) {
             this.#currentHealth = 0;
-              
-            // console.log(`Player died: health=${this.#currentHealth}`);
-            
             this.handleDeath();
         }
-    }handleDeath() {
+    }
+    
+    handleDeath() {
         // Stop de beweging van de speler onmiddellijk
         this.vel = Vector.Zero;
         
@@ -227,7 +361,9 @@ export class Player extends Actor {
         if (this.scene?.engine?.endGame) {
             this.scene.engine.endGame();
         }
-    }    // Haal het huidige health-percentage op
+    }    
+    
+    // Haal het huidige health-percentage op
     getHealthPercentage() {
         return this.#currentHealth / this.#maxHealth;
     }
@@ -249,8 +385,6 @@ export class Player extends Actor {
             this.#isShooting = true;
             this.#shootingAnimationTimer = this.#shootingAnimationDuration;
             this.graphics.use(this.shootingSprite);
-              
-            // console.log(`Player shooting animation started: duration=${this.#shootingAnimationDuration}ms`);
         }
     }
     
@@ -260,8 +394,6 @@ export class Player extends Actor {
             this.#isShooting = false;
             this.#shootingAnimationTimer = 0;
             this.graphics.use(this.normalSprite);
-              
-            // console.log(`Player shooting animation stopped: returning to normal sprite`);
         }
     }
 }
