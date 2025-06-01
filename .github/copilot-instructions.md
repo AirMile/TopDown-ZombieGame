@@ -1,7 +1,7 @@
 # Copilot Instructions - Excalibur Game Development
 
 ## Project Setup
-- **Tech stack**: JavaScript (ES6+), Excalibur.js, Vite
+- **Tech stack**: JavaScript (ES6+), Excalibur.js, Vite.
 - **Project structure**: `/src/js/` for all game files, `/public/images/` for assets
 - **Import style**: Named imports, no global "ex." namespace
 - **Resources**: Images are defined in `/src/js/resources.js` as variables
@@ -48,6 +48,7 @@ export class Enemy extends Actor {
 ## Console Logging Requirements
 - **Always add console.log** for new features to test functionality
 - **Include all relevant data** that affects if-statements:
+- **When you come across a console that is not currently being used for the current implementation remove the console.log
 ```javascript
 if (this.#health <= 0 && !this.#isDead) {
     console.log(`Player died: health=${this.#health}, isDead=${this.#isDead}, position=${this.pos.x},${this.pos.y}`);
